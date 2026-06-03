@@ -8,6 +8,8 @@
   <body>
     <div id="header">
       <span id="title">gitxt</span>
+      <select id="repo-select" title="Switch repository"></select>
+      <button id="add-repo" title="Add a repository">+ Repo</button>
       <span id="status"></span>
       <button id="open-settings" title="Settings" aria-label="Settings">⚙</button>
     </div>
@@ -31,6 +33,7 @@
         <nav id="settings-cats">
           <button data-cat="appearance" class="active">Appearance</button>
           <button data-cat="git">Git Identity</button>
+          <button data-cat="repos">Repositories</button>
           <button data-cat="about">About</button>
         </nav>
         <div id="settings-panes">
@@ -49,6 +52,11 @@
             <label>Name <input id="git-local-name" type="text" spellcheck="false" /></label>
             <label>Email <input id="git-local-email" type="text" spellcheck="false" /></label>
             <div class="row"><button id="git-save">Save git identity</button> <span id="git-status"></span></div>
+          </section>
+          <section data-pane="repos" hidden>
+            <h3>Repositories</h3>
+            <div class="row"><button id="add-repo-settings">Add repository…</button></div>
+            <div id="repo-list"></div>
           </section>
           <section data-pane="about" hidden>
             <h3>About</h3>

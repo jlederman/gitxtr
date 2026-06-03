@@ -52,6 +52,9 @@ public sealed class LibGit2SharpRepositoryReader : IRepositoryReader
         return refs;
     }
 
+    public bool IsValid(string repoPath) =>
+        !string.IsNullOrEmpty(repoPath) && Repository.IsValid(repoPath);
+
     private const int MaxDiffChars = 200_000;
 
     public CommitDetail ReadCommitDetail(string repoPath, CommitId id)

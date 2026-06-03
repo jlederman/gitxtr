@@ -1,5 +1,6 @@
 import { request } from "./bridge";
 import { THEMES, getTheme, applyThemeCss, applyFontCss } from "./themes";
+import { addRepo, renderManager } from "./repos";
 import type { GraphRenderer } from "./graphRenderer";
 
 export interface Settings {
@@ -74,6 +75,7 @@ export function initSettings(opts: {
     btn.addEventListener("click", () => selectCat(btn.dataset.cat!)),
   );
   $("git-save").addEventListener("click", () => void saveGitIdentity());
+  $("add-repo-settings").addEventListener("click", () => void addRepo());
 }
 
 function clampInt(v: string, lo: number, hi: number, fallback: number): number {
@@ -86,6 +88,7 @@ function selectCat(cat: string): void {
     .forEach((b) => b.classList.toggle("active", b.dataset.cat === cat));
   document.querySelectorAll<HTMLElement>("#settings-panes section")
     .forEach((p) => { p.hidden = p.dataset.pane !== cat; });
+  if (cat === "repos") renderManager();
 }
 
 async function open(): Promise<void> {

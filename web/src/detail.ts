@@ -1,4 +1,5 @@
 import { request } from "./bridge";
+import { getCurrentRepo } from "./repos";
 
 interface FileChange { path: string; status: string; added: number; deleted: number; }
 interface Ref { name: string; kind: string; }
@@ -22,7 +23,7 @@ function esc(s: string): string {
 export async function showCommit(sha: string): Promise<void> {
   const my = ++token;
   try {
-    const d = await request<CommitDetails>("getCommitDetails", { sha });
+    const d = await request<CommitDetails>("getCommitDetails", { sha, repoPath: getCurrentRepo() });
     if (my !== token) return;
     renderMeta(d);
     renderFiles(d);

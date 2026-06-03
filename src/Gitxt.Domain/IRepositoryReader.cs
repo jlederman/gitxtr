@@ -14,4 +14,7 @@ public interface IRepositoryReader
 
     /// <summary>Metadata, changed files, and the unified diff for a single commit.</summary>
     CommitDetail ReadCommitDetail(string repoPath, CommitId id);
+
+    /// <summary>True if <paramref name="repoPath"/> is a valid git repository.</summary>
+    bool IsValid(string repoPath);
 }

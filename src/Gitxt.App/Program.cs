@@ -4,7 +4,8 @@ using Gitxt.Domain;
 using Gitxt.Infrastructure;
 using Photino.NET;
 
-var service = new GraphQueryService(new LibGit2SharpRepositoryReader(), new GraphLayoutEngine());
+var reader = new LibGit2SharpRepositoryReader();
+var service = new GraphQueryService(reader, new GraphLayoutEngine());
 var settingsStore = new JsonSettingsStore();
 var gitConfig = new LibGit2SharpGitConfigService();
 
@@ -25,7 +26,18 @@ if (OperatingSystem.IsLinux())
     Environment.SetEnvironmentVariable("WEBKIT_DISABLE_COMPOSITING_MODE", "1");
 }
 
-string defaultRepo = Array.Find(args, a => !a.StartsWith("--")) ?? Directory.GetCurrentDirectory();
+// Optional CLI repo arg (dev convenience). If valid, ensure it's in the persisted repo list.
+string? cliArg = Array.Find(args, a => !a.StartsWith("--"));
+string? cliRepo = !string.IsNullOrEmpty(cliArg) && reader.IsValid(Path.GetFullPath(cliArg))
+    ? Path.GetFullPath(cliArg) : null;
+if (cliRepo is not null)
+{
+    var startup = settingsStore.Load();
+    if (!startup.Repos.Contains(cliRepo))
+        settingsStore.Save(startup with { Repos = startup.Repos.Append(cliRepo).ToArray() });
+}
+string fallbackRepo = cliRepo ?? "";
+
 var jsonOpts = new JsonSerializerOptions(JsonSerializerDefaults.Web);
 string indexPath = Path.Combine(AppContext.BaseDirectory, "wwwroot", "index.html");
 
@@ -36,17 +48,17 @@ var window = new PhotinoWindow()
     .Center()
     .RegisterWebMessageReceivedHandler((sender, message) =>
     {
-        // Runs on the UI thread. The demo payloads are tiny, so we answer synchronously;
-        // pitfall #5 (offload heavy work, paginate) is handled when we wire large repos.
+        // Runs on the UI thread; answered synchronously. The folder picker (addRepo) uses
+        // Photino's synchronous ShowOpenFolder, which is safe to call from here.
         var w = (PhotinoWindow)sender!;
-        w.SendWebMessage(Handle(message));
+        w.SendWebMessage(Handle(w, message));
     })
     .Load(indexPath);
 
 window.WaitForClose();
 return 0;
 
-string Handle(string message)
+string Handle(PhotinoWindow w, string message)
 {
     string id = "";
     try
@@ -59,20 +71,33 @@ string Handle(string message)
         switch (type)
         {
             case "loadGraph":
-                string path = root.TryGetProperty("repoPath", out var p) && p.GetString() is { Length: > 0 } s
-                    ? s : defaultRepo;
+            {
+                string path = root.TryGetProperty("repoPath", out var p) && p.GetString() is { Length: > 0 } rp
+                    ? rp : fallbackRepo;
                 int? limit = root.TryGetProperty("limit", out var l) && l.ValueKind == JsonValueKind.Number
                     ? l.GetInt32() : 2000;
-                GraphView view = service.GetGraph(path, limit);
-                return JsonSerializer.Serialize(new { id, ok = true, data = view }, jsonOpts);
+                if (string.IsNullOrEmpty(path))
+                    return JsonSerializer.Serialize(new { id, ok = false, error = "no repository selected" }, jsonOpts);
+                return JsonSerializer.Serialize(new { id, ok = true, data = service.GetGraph(path, limit) }, jsonOpts);
+            }
 
             case "getCommitDetails":
+            {
                 string sha = root.GetProperty("sha").GetString() ?? "";
-                CommitDetailsDto details = service.GetCommitDetails(defaultRepo, sha);
-                return JsonSerializer.Serialize(new { id, ok = true, data = details }, jsonOpts);
+                string repo = root.TryGetProperty("repoPath", out var cdp) && cdp.GetString() is { Length: > 0 } cds ? cds : fallbackRepo;
+                return JsonSerializer.Serialize(new { id, ok = true, data = service.GetCommitDetails(repo, sha) }, jsonOpts);
+            }
 
             case "getSettings":
-                return JsonSerializer.Serialize(new { id, ok = true, data = settingsStore.Load() }, jsonOpts);
+            {
+                var st = settingsStore.Load();
+                string? currentRepo = cliRepo
+                    ?? (!string.IsNullOrEmpty(st.LastRepo) && reader.IsValid(st.LastRepo!) ? st.LastRepo : null)
+                    ?? st.Repos.FirstOrDefault(reader.IsValid);
+                return JsonSerializer.Serialize(new { id, ok = true, data = new {
+                    st.Theme, st.FontFamily, st.FontSize, st.DetailHeight, st.DetailTopHeight, st.Repos, st.LastRepo, currentRepo
+                } }, jsonOpts);
+            }
 
             case "saveSettings":
             {
@@ -91,15 +116,46 @@ string Handle(string message)
                 return JsonSerializer.Serialize(new { id, ok = true }, jsonOpts);
             }
 
+            case "addRepo":
+            {
+                string home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                string[] picked = w.ShowOpenFolder("Add a repository", home, false);
+                var sa = settingsStore.Load();
+                if (picked.Length == 0)
+                    return JsonSerializer.Serialize(new { id, ok = true, data = new { added = (string?)null, repos = sa.Repos } }, jsonOpts);
+                string repoPath = Path.GetFullPath(picked[0]);
+                if (!reader.IsValid(repoPath))
+                    return JsonSerializer.Serialize(new { id, ok = false, error = $"Not a git repository: {repoPath}" }, jsonOpts);
+                if (!sa.Repos.Contains(repoPath))
+                {
+                    sa = sa with { Repos = sa.Repos.Append(repoPath).ToArray() };
+                    settingsStore.Save(sa);
+                }
+                return JsonSerializer.Serialize(new { id, ok = true, data = new { added = repoPath, repos = sa.Repos } }, jsonOpts);
+            }
+
+            case "removeRepo":
+            {
+                string repoPath = root.GetProperty("repoPath").GetString() ?? "";
+                var sr = settingsStore.Load();
+                sr = sr with
+                {
+                    Repos = sr.Repos.Where(r => r != repoPath).ToArray(),
+                    LastRepo = sr.LastRepo == repoPath ? null : sr.LastRepo,
+                };
+                settingsStore.Save(sr);
+                return JsonSerializer.Serialize(new { id, ok = true, data = new { repos = sr.Repos } }, jsonOpts);
+            }
+
             case "getGitIdentity":
             {
-                string? gp = root.TryGetProperty("repoPath", out var gpr) && gpr.ValueKind == JsonValueKind.String ? gpr.GetString() : defaultRepo;
+                string? gp = root.TryGetProperty("repoPath", out var gpr) && gpr.ValueKind == JsonValueKind.String ? gpr.GetString() : fallbackRepo;
                 return JsonSerializer.Serialize(new { id, ok = true, data = gitConfig.Get(gp) }, jsonOpts);
             }
 
             case "setGitIdentity":
             {
-                string? sp = root.TryGetProperty("repoPath", out var spr) && spr.ValueKind == JsonValueKind.String ? spr.GetString() : defaultRepo;
+                string? sp = root.TryGetProperty("repoPath", out var spr) && spr.ValueKind == JsonValueKind.String ? spr.GetString() : fallbackRepo;
                 var scope = root.GetProperty("scope").GetString() == "local" ? GitConfigScope.Local : GitConfigScope.Global;
                 string nm = root.TryGetProperty("name", out var nmv) ? nmv.GetString() ?? "" : "";
                 string em = root.TryGetProperty("email", out var emv) ? emv.GetString() ?? "" : "";
