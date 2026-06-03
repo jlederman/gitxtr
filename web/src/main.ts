@@ -1,7 +1,7 @@
 import "./style.css";
 import { request } from "./bridge";
 import { GraphRenderer } from "./graphRenderer";
-import { showCommit } from "./detail";
+import { showCommit, initDiffToolbar } from "./detail";
 import { initSettings, applyAppearance, type Settings } from "./settings";
 import { initSplitter } from "./splitter";
 import { initRepos, getCurrentRepo } from "./repos";
@@ -21,7 +21,8 @@ const renderer = new GraphRenderer(canvas, viewport, (row: Row) => {
 
 const DEFAULT_SETTINGS: BootSettings = {
   theme: "mocha", fontFamily: "ui-monospace, monospace", fontSize: 13,
-  detailHeight: 320, detailTopHeight: 200, detailMetaHeight: 120, repos: [], lastRepo: null, currentRepo: null,
+  detailHeight: 320, detailTopHeight: 200, detailMetaHeight: 120, diffView: "unified",
+  repos: [], lastRepo: null, currentRepo: null,
 };
 
 function applyDetailHeight(px: number): void {
@@ -82,6 +83,8 @@ async function boot(): Promise<void> {
     current: settings.currentRepo,
     onSwitch: (repo) => (repo ? void loadGraph(repo) : showEmpty()),
   });
+
+  initDiffToolbar(settings.diffView, (m) => void request("saveSettings", { settings: { diffView: m } }));
 
   if (settings.currentRepo) await loadGraph(settings.currentRepo);
   else showEmpty();

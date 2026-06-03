@@ -10,14 +10,33 @@ interface CommitDetails {
 
 const metaEl = () => document.getElementById("detail-meta") as HTMLElement;
 const filesEl = () => document.getElementById("detail-files") as HTMLElement;
-const diffEl = () => document.getElementById("detail-diff") as HTMLElement;
+const bodyEl = () => document.getElementById("diff-body") as HTMLElement; // diff scroll + content
 
-// Guards against out-of-order responses when arrowing through commits quickly:
-// only the most recent request is allowed to render.
+// Guards against out-of-order responses when arrowing through commits quickly.
 let token = 0;
+let diffMode: "unified" | "split" = "unified";
+let lastDetails: CommitDetails | null = null;
 
 function esc(s: string): string {
   return s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c] as string));
+}
+
+// Wire the Unified/Split toggle. onChange persists the choice.
+export function initDiffToolbar(initial: string, onChange: (mode: string) => void): void {
+  diffMode = initial === "split" ? "split" : "unified";
+  const buttons = document.querySelectorAll<HTMLButtonElement>("#diff-toolbar .seg button");
+  const sync = () => buttons.forEach((b) => b.classList.toggle("active", b.dataset.mode === diffMode));
+  sync();
+  buttons.forEach((b) =>
+    b.addEventListener("click", () => {
+      const m = b.dataset.mode === "split" ? "split" : "unified";
+      if (m === diffMode) return;
+      diffMode = m;
+      sync();
+      if (lastDetails) renderDiff(lastDetails);
+      onChange(m);
+    }),
+  );
 }
 
 export async function showCommit(sha: string): Promise<void> {
@@ -25,6 +44,7 @@ export async function showCommit(sha: string): Promise<void> {
   try {
     const d = await request<CommitDetails>("getCommitDetails", { sha, repoPath: getCurrentRepo() });
     if (my !== token) return;
+    lastDetails = d;
     renderMeta(d);
     renderFiles(d);
     renderDiff(d);
@@ -32,7 +52,7 @@ export async function showCommit(sha: string): Promise<void> {
     if (my !== token) return;
     metaEl().innerHTML = `<span class="when">error: ${esc(e instanceof Error ? e.message : String(e))}</span>`;
     filesEl().innerHTML = "";
-    diffEl().innerHTML = "";
+    bodyEl().innerHTML = "";
   }
 }
 
@@ -86,6 +106,12 @@ function renderFiles(d: CommitDetails): void {
 }
 
 function renderDiff(d: CommitDetails): void {
+  const html = diffMode === "split" ? renderSplit(d) : renderUnified(d);
+  bodyEl().innerHTML = html || `<div class="trunc">no textual diff</div>`;
+  bodyEl().scrollTop = 0;
+}
+
+function renderUnified(d: CommitDetails): string {
   const lines = d.diff.length ? d.diff.split("\n") : [];
   const out: string[] = [];
   let sec = -1;
@@ -100,6 +126,66 @@ function renderDiff(d: CommitDetails): void {
     out.push(`<div class="${cls}"${attr}>${esc(line) || "&nbsp;"}</div>`);
   }
   if (d.diffTruncated) out.push(`<div class="trunc">… diff truncated (large commit)</div>`);
-  diffEl().innerHTML = out.join("") || `<div class="trunc">no textual diff</div>`;
-  diffEl().scrollTop = 0;
+  return out.join("");
+}
+
+// Side-by-side view: within each hunk, pair runs of removed/added lines (old left, new right);
+// context lines appear on both sides. Line numbers track the hunk's -old/+new counters.
+function renderSplit(d: CommitDetails): string {
+  const lines = d.diff.length ? d.diff.split("\n") : [];
+  const out: string[] = [];
+  let sec = -1;
+  let oldLn = 0;
+  let newLn = 0;
+  let dels: { no: number; text: string }[] = [];
+  let adds: { no: number; text: string }[] = [];
+
+  const flush = () => {
+    const n = Math.max(dels.length, adds.length);
+    for (let i = 0; i < n; i++) {
+      const l = dels[i];
+      const r = adds[i];
+      out.push(srow(
+        l ? l.no : null, l ? l.text : "", l ? "del" : "blank",
+        r ? r.no : null, r ? r.text : "", r ? "add" : "blank",
+      ));
+    }
+    dels = [];
+    adds = [];
+  };
+
+  for (const line of lines) {
+    if (line.startsWith("diff --git")) {
+      flush();
+      out.push(`<div class="dhdr fhdr" id="diffsec-${++sec}">${esc(line)}</div>`);
+    } else if (line.startsWith("+++") || line.startsWith("---") || line.startsWith("index ")) {
+      flush();
+      out.push(`<div class="dhdr fhdr">${esc(line)}</div>`);
+    } else if (line.startsWith("@@")) {
+      flush();
+      const m = /@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/.exec(line);
+      if (m) { oldLn = parseInt(m[1], 10); newLn = parseInt(m[2], 10); }
+      out.push(`<div class="dhdr hunk">${esc(line)}</div>`);
+    } else if (line.startsWith("-")) {
+      dels.push({ no: oldLn++, text: line.slice(1) });
+    } else if (line.startsWith("+")) {
+      adds.push({ no: newLn++, text: line.slice(1) });
+    } else {
+      flush();
+      const text = line.startsWith(" ") ? line.slice(1) : line;
+      out.push(srow(oldLn, text, "ctx", newLn, text, "ctx"));
+      oldLn++;
+      newLn++;
+    }
+  }
+  flush();
+  if (d.diffTruncated) out.push(`<div class="trunc">… diff truncated (large commit)</div>`);
+  return out.join("");
+}
+
+function srow(lno: number | null, ltext: string, lcls: string, rno: number | null, rtext: string, rcls: string): string {
+  return `<div class="srow">` +
+    `<span class="lno">${lno ?? ""}</span><span class="lc ${lcls}">${esc(ltext) || "&nbsp;"}</span>` +
+    `<span class="rno">${rno ?? ""}</span><span class="rc ${rcls}">${esc(rtext) || "&nbsp;"}</span>` +
+    `</div>`;
 }

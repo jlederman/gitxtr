@@ -28,7 +28,7 @@ export function mockResponse(type: string, payload: Record<string, unknown>): un
     };
   }
   if (type === "getSettings")
-    return { theme: "mocha", fontFamily: "ui-monospace, monospace", fontSize: 13, detailHeight: 320, detailTopHeight: 200, detailMetaHeight: 120, repos: ["/tmp/gitxt_demo"], lastRepo: null, currentRepo: "/tmp/gitxt_demo" };
+    return { theme: "mocha", fontFamily: "ui-monospace, monospace", fontSize: 13, detailHeight: 320, detailTopHeight: 200, detailMetaHeight: 120, diffView: "unified", repos: ["/tmp/gitxt_demo"], lastRepo: null, currentRepo: "/tmp/gitxt_demo" };
   if (type === "saveSettings") return {};
   if (type === "addRepo") return { added: "/tmp/gitxt_demo", repos: ["/tmp/gitxt_demo"] };
   if (type === "removeRepo") return { repos: [] };

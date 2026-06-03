@@ -10,6 +10,7 @@ export interface Settings {
   detailHeight: number;
   detailTopHeight: number;
   detailMetaHeight: number;
+  diffView: string;
   repos: string[];
   lastRepo: string | null;
 }

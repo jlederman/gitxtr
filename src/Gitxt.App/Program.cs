@@ -99,7 +99,7 @@ string Handle(PhotinoWindow w, string message)
                     ?? (!string.IsNullOrEmpty(st.LastRepo) && reader.IsValid(st.LastRepo!) ? st.LastRepo : null)
                     ?? st.Repos.FirstOrDefault(reader.IsValid);
                 return JsonSerializer.Serialize(new { id, ok = true, data = new {
-                    st.Theme, st.FontFamily, st.FontSize, st.DetailHeight, st.DetailTopHeight, st.DetailMetaHeight, st.Repos, st.LastRepo, currentRepo
+                    st.Theme, st.FontFamily, st.FontSize, st.DetailHeight, st.DetailTopHeight, st.DetailMetaHeight, st.Repos, st.LastRepo, st.DiffView, currentRepo
                 } }, jsonOpts);
             }
 
@@ -115,6 +115,7 @@ string Handle(PhotinoWindow w, string message)
                     DetailHeight = se.TryGetProperty("detailHeight", out var dh) && dh.ValueKind == JsonValueKind.Number ? (int)Math.Round(dh.GetDouble()) : cur.DetailHeight,
                     DetailTopHeight = se.TryGetProperty("detailTopHeight", out var dth) && dth.ValueKind == JsonValueKind.Number ? (int)Math.Round(dth.GetDouble()) : cur.DetailTopHeight,
                     DetailMetaHeight = se.TryGetProperty("detailMetaHeight", out var dmh) && dmh.ValueKind == JsonValueKind.Number ? (int)Math.Round(dmh.GetDouble()) : cur.DetailMetaHeight,
+                    DiffView = se.TryGetProperty("diffView", out var dv) && dv.ValueKind == JsonValueKind.String ? dv.GetString()! : cur.DiffView,
                     LastRepo = se.TryGetProperty("lastRepo", out var lrp) && lrp.ValueKind == JsonValueKind.String ? lrp.GetString() : cur.LastRepo,
                 };
                 settingsStore.Save(updated);

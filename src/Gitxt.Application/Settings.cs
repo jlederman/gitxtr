@@ -10,6 +10,7 @@ public sealed record Settings
     public int DetailHeight { get; init; } = 320;
     public int DetailTopHeight { get; init; } = 200;
     public int DetailMetaHeight { get; init; } = 120;
+    public string DiffView { get; init; } = "unified"; // "unified" | "split"
     public IReadOnlyList<string> Repos { get; init; } = [];
     public string? LastRepo { get; init; }
 }
