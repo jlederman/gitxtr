@@ -92,8 +92,28 @@ canvas { position: absolute; inset: 0; display: block; }
   white-space: pre;
   padding: 6px 0;
 }
-#detail-diff .files { padding: 0 12px 6px; color: var(--muted); }
-#detail-diff .files .f { color: var(--fg); }
+#detail-files {
+  flex: 0 0 auto;
+  max-height: 130px;
+  overflow: auto;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  padding: 4px 0;
+}
+#detail-files .fhead { padding: 2px 12px 4px; color: var(--muted); }
+#detail-files .fitem { display: flex; align-items: center; gap: 8px; padding: 2px 12px; cursor: pointer; white-space: nowrap; }
+#detail-files .fitem:hover { background: var(--surface2); }
+#detail-files .fitem.sel { background: var(--sel); }
+#detail-files .fitem.muted { color: var(--muted); cursor: default; }
+#detail-files .fstat { width: 1.1em; text-align: center; font-weight: bold; flex: 0 0 auto; }
+#detail-files .st-add { color: var(--add-fg); }
+#detail-files .st-del { color: var(--del-fg); }
+#detail-files .st-mod { color: #f9e2af; }
+#detail-files .st-ren { color: var(--sha); }
+#detail-files .fpath { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; }
+#detail-files .fnums { flex: 0 0 auto; }
+#detail-files .adds { color: var(--add-fg); }
+#detail-files .dels { color: var(--del-fg); }
 #detail-diff .line { padding: 0 12px; }
 #detail-diff .add { background: var(--add-bg); color: var(--add-fg); }
 #detail-diff .del { background: var(--del-bg); color: var(--del-fg); }
