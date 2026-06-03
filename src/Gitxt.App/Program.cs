@@ -40,6 +40,10 @@ string fallbackRepo = cliRepo ?? "";
 
 var jsonOpts = new JsonSerializerOptions(JsonSerializerDefaults.Web);
 string indexPath = Path.Combine(AppContext.BaseDirectory, "wwwroot", "index.html");
+// Dev hot-reload: when GITXT_DEV_URL is set (the Vite dev server), load that instead of the built
+// bundle so editing web/ live-reloads via Vite HMR. Run `npm run dev`, then
+// `GITXT_DEV_URL=http://localhost:5173 dotnet run --project src/Gitxt.App -- <repo>`.
+string? devUrl = Environment.GetEnvironmentVariable("GITXT_DEV_URL");
 
 var window = new PhotinoWindow()
     .SetTitle("gitxt")
@@ -53,7 +57,7 @@ var window = new PhotinoWindow()
         var w = (PhotinoWindow)sender!;
         w.SendWebMessage(Handle(w, message));
     })
-    .Load(indexPath);
+    .Load(string.IsNullOrEmpty(devUrl) ? indexPath : devUrl);
 
 window.WaitForClose();
 return 0;

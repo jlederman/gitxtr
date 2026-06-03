@@ -1,16 +1,19 @@
 import { defineConfig } from "vite";
 import { viteSingleFile } from "vite-plugin-singlefile";
 
-// Inline all JS/CSS into a single index.html so Photino can load it over file://
-// without the module-script CORS errors that a normal multi-file Vite build hits.
-// Output goes into the App's obj/ build-intermediate dir (already git-ignored); the .csproj
-// copies it to wwwroot/ in the build output — so no generated file lives in the source tree.
-export default defineConfig({
-  base: "./",
+// Build (npm run build / dotnet build): inline all JS/CSS into a single index.html so Photino can
+// load it over file:// without module-script CORS errors, and emit to the App's obj/ build dir
+// (git-ignored), which the .csproj copies to wwwroot/ in the output — nothing generated in source.
+//
+// Dev (npm run dev): a normal HMR dev server on :5173. Point Photino at it with GITXT_DEV_URL
+// (see Gitxt.App/Program.cs) for live reload while editing web/.
+export default defineConfig(({ command }) => ({
+  base: command === "build" ? "./" : "/",
   plugins: [viteSingleFile()],
+  server: { port: 5173, strictPort: true },
   build: {
     outDir: "../src/Gitxt.App/obj/webdist",
     emptyOutDir: true,
     target: "es2022",
   },
-});
+}));
