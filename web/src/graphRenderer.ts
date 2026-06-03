@@ -5,12 +5,14 @@ const ROW_H = 24;
 const COL_W = 16;
 const DOT_R = 4.5;
 const PAD_L = 14;
+const PAD_R = 24;
 const SCROLLBAR_W = 10;
 
 /**
- * Custom-drawn commit graph on a Canvas. The viewport is fixed-size; scrolling is managed in JS
- * (wheel / keyboard / draggable scrollbar) and only the visible rows are drawn, so it scales to
- * very large histories without a giant backing canvas. DPR-aware so it stays crisp on hi-dpi.
+ * Custom-drawn commit graph on a Canvas. The viewport is fixed-size; scrolling (both axes) is
+ * managed in JS — wheel / keyboard / draggable scrollbars — and only the visible rows are drawn,
+ * so it scales to very large histories. Content is panned via ctx.translate(-scrollLeft) so long
+ * messages and ref chips are reachable horizontally. DPR-aware so it stays crisp on hi-dpi.
  */
 export class GraphRenderer {
   private view: GraphView = { rows: [], width: 0, truncated: false };
@@ -19,8 +21,10 @@ export class GraphRenderer {
   private vw = 0;
   private vh = 0;
   private scrollTop = 0;
+  private scrollLeft = 0;
+  private contentWidth = 0;
   private selected = -1;
-  private draggingThumb = false;
+  private dragging: "none" | "v" | "h" = "none";
   private dragOffset = 0;
   private pressY: number | null = null;
   private theme: Theme = THEMES.mocha;
@@ -46,6 +50,7 @@ export class GraphRenderer {
     this.view = view;
     this.selected = -1;
     this.scrollTop = 0;
+    this.scrollLeft = 0;
     if (view.rows.length > 0) this.select(0);
     else this.draw();
   }
@@ -76,12 +81,15 @@ export class GraphRenderer {
     this.scrollTop = Math.max(0, Math.min(this.maxScroll(), this.scrollTop));
   }
 
-  // ── geometry ────────────────────────────────────────────────────────────
+  // ── geometry (content coordinates; scrollLeft applied at draw time) ───────
   private contentHeight(): number {
     return this.view.rows.length * ROW_H;
   }
   private maxScroll(): number {
     return Math.max(0, this.contentHeight() - this.vh);
+  }
+  private maxScrollX(): number {
+    return Math.max(0, this.contentWidth - this.vw);
   }
   private x(col: number): number {
     return PAD_L + col * COL_W + COL_W / 2;
@@ -93,7 +101,10 @@ export class GraphRenderer {
   // ── input ──────────────────────────────────────────────────────────────
   private onWheel(e: WheelEvent): void {
     e.preventDefault();
-    this.scrollBy(e.deltaY);
+    let dx = e.deltaX;
+    let dy = e.deltaY;
+    if (e.shiftKey && dx === 0) { dx = dy; dy = 0; } // shift+wheel → horizontal
+    this.scrollBy(dx, dy);
   }
   private onKey(e: KeyboardEvent): void {
     const rows = this.view.rows.length;
@@ -110,38 +121,46 @@ export class GraphRenderer {
       default: return;
     }
     e.preventDefault();
-    // Arrow keys move the selected commit (Git Extensions style); the mouse wheel and
-    // scrollbar still free-scroll the page without changing the selection.
+    // Arrow keys move the selected commit (Git Extensions style); the wheel and scrollbars
+    // still free-scroll without changing the selection.
     this.select(Math.max(0, Math.min(rows - 1, target)));
   }
-  private scrollBy(dy: number): void {
-    const next = Math.max(0, Math.min(this.maxScroll(), this.scrollTop + dy));
-    if (next !== this.scrollTop) { this.scrollTop = next; this.draw(); }
+  private scrollBy(dx: number, dy: number): void {
+    const ny = Math.max(0, Math.min(this.maxScroll(), this.scrollTop + dy));
+    const nx = Math.max(0, Math.min(this.maxScrollX(), this.scrollLeft + dx));
+    if (ny !== this.scrollTop || nx !== this.scrollLeft) {
+      this.scrollTop = ny;
+      this.scrollLeft = nx;
+      this.draw();
+    }
   }
 
   private onPointerDown(e: PointerEvent): void {
-    const t = this.thumbRect();
-    if (t && e.offsetX >= this.vw - SCROLLBAR_W) {
-      // start (or jump-then-) dragging the scrollbar thumb
-      if (e.offsetY >= t.y && e.offsetY <= t.y + t.h) {
-        this.draggingThumb = true;
-        this.dragOffset = e.offsetY - t.y;
-      } else {
-        this.draggingThumb = true;
-        this.dragOffset = t.h / 2;
-        this.dragThumbTo(e.offsetY);
-      }
+    const h = this.hThumbRect();
+    if (h && e.offsetY >= this.vh - SCROLLBAR_W) {
+      this.dragging = "h";
+      this.dragOffset = e.offsetX >= h.x && e.offsetX <= h.x + h.w ? e.offsetX - h.x : h.w / 2;
+      this.dragHTo(e.offsetX);
+      this.canvas.setPointerCapture(e.pointerId);
+      return;
+    }
+    const v = this.vThumbRect();
+    if (v && e.offsetX >= this.vw - SCROLLBAR_W) {
+      this.dragging = "v";
+      this.dragOffset = e.offsetY >= v.y && e.offsetY <= v.y + v.h ? e.offsetY - v.y : v.h / 2;
+      this.dragVTo(e.offsetY);
       this.canvas.setPointerCapture(e.pointerId);
       return;
     }
     this.pressY = e.offsetY;
   }
   private onPointerMove(e: PointerEvent): void {
-    if (this.draggingThumb) this.dragThumbTo(e.offsetY);
+    if (this.dragging === "v") this.dragVTo(e.offsetY);
+    else if (this.dragging === "h") this.dragHTo(e.offsetX);
   }
   private onPointerUp(e: PointerEvent): void {
-    if (this.draggingThumb) {
-      this.draggingThumb = false;
+    if (this.dragging !== "none") {
+      this.dragging = "none";
       this.canvas.releasePointerCapture(e.pointerId);
       return;
     }
@@ -151,20 +170,39 @@ export class GraphRenderer {
     }
     this.pressY = null;
   }
-  private dragThumbTo(offsetY: number): void {
-    const t = this.thumbRect();
-    if (!t) return;
-    const travel = this.vh - t.h;
+  private dragVTo(offsetY: number): void {
+    const v = this.vThumbRect();
+    if (!v) return;
+    const travel = this.vh - v.h;
     const frac = travel > 0 ? Math.max(0, Math.min(1, (offsetY - this.dragOffset) / travel)) : 0;
     this.scrollTop = frac * this.maxScroll();
     this.draw();
   }
-  private thumbRect(): { y: number; h: number } | null {
+  private dragHTo(offsetX: number): void {
+    const h = this.hThumbRect();
+    if (!h) return;
+    const travel = this.hTrack() - h.w;
+    const frac = travel > 0 ? Math.max(0, Math.min(1, (offsetX - this.dragOffset) / travel)) : 0;
+    this.scrollLeft = frac * this.maxScrollX();
+    this.draw();
+  }
+
+  private vThumbRect(): { y: number; h: number } | null {
     const content = this.contentHeight();
     if (content <= this.vh) return null;
     const h = Math.max(24, (this.vh * this.vh) / content);
     const y = (this.scrollTop / this.maxScroll()) * (this.vh - h);
     return { y, h };
+  }
+  private hTrack(): number {
+    return this.vw - (this.vThumbRect() ? SCROLLBAR_W : 0); // leave the corner if v-scrollbar shows
+  }
+  private hThumbRect(): { x: number; w: number } | null {
+    if (this.contentWidth <= this.vw) return null;
+    const track = this.hTrack();
+    const w = Math.max(24, (track * this.vw) / this.contentWidth);
+    const x = (this.scrollLeft / this.maxScrollX()) * (track - w);
+    return { x, w };
   }
 
   // ── rendering ────────────────────────────────────────────────────────────
@@ -178,6 +216,7 @@ export class GraphRenderer {
     this.canvas.width = Math.max(1, Math.floor(this.vw * this.dpr));
     this.canvas.height = Math.max(1, Math.floor(this.vh * this.dpr));
     this.scrollTop = Math.min(this.scrollTop, this.maxScroll());
+    this.scrollLeft = Math.min(this.scrollLeft, this.maxScrollX());
     this.draw();
   }
 
@@ -187,17 +226,24 @@ export class GraphRenderer {
     ctx.clearRect(0, 0, this.vw, this.vh);
 
     const rows = this.view.rows;
-    if (rows.length === 0) return;
+    if (rows.length === 0) {
+      this.contentWidth = 0;
+      return;
+    }
 
     const first = Math.max(0, Math.floor(this.scrollTop / ROW_H) - 1);
     const last = Math.min(rows.length - 1, Math.ceil((this.scrollTop + this.vh) / ROW_H) + 1);
 
-    // selection highlight band
+    // selection highlight band — screen coords, spans the full viewport width
     if (this.selected >= 0) {
       const sy = this.selected * ROW_H - this.scrollTop;
       ctx.fillStyle = this.theme.selectionBg;
       ctx.fillRect(0, sy, this.vw, ROW_H);
     }
+
+    // pan content horizontally
+    ctx.save();
+    ctx.translate(-this.scrollLeft, 0);
 
     // edges (drawn under the nodes)
     ctx.lineWidth = 2;
@@ -221,6 +267,7 @@ export class GraphRenderer {
     ctx.font = `${this.fontSize}px ${this.fontFamily}`;
     ctx.textBaseline = "middle";
     const textX = this.textStartX();
+    let maxRight = 0;
     for (let i = first; i <= last; i++) {
       const row = rows[i];
       const y = i * ROW_H - this.scrollTop + ROW_H / 2;
@@ -249,13 +296,26 @@ export class GraphRenderer {
       tx += ctx.measureText(row.shortSha).width + 10;
       ctx.fillStyle = this.theme.fg;
       ctx.fillText(row.summary, tx, y);
+      maxRight = Math.max(maxRight, tx + ctx.measureText(row.summary).width);
     }
 
-    // scrollbar
-    const thumb = this.thumbRect();
-    if (thumb) {
+    ctx.restore();
+
+    // update horizontal extent (from visible rows) and keep scrollLeft in range
+    this.contentWidth = maxRight + PAD_R;
+    this.scrollLeft = Math.max(0, Math.min(this.maxScrollX(), this.scrollLeft));
+
+    // scrollbars — screen coords
+    const v = this.vThumbRect();
+    if (v) {
       ctx.fillStyle = this.theme.muted;
-      roundRect(ctx, this.vw - SCROLLBAR_W + 2, thumb.y, SCROLLBAR_W - 4, thumb.h, 3);
+      roundRect(ctx, this.vw - SCROLLBAR_W + 2, v.y, SCROLLBAR_W - 4, v.h, 3);
+      ctx.fill();
+    }
+    const h = this.hThumbRect();
+    if (h) {
+      ctx.fillStyle = this.theme.muted;
+      roundRect(ctx, h.x, this.vh - SCROLLBAR_W + 2, h.w, SCROLLBAR_W - 4, 3);
       ctx.fill();
     }
   }
