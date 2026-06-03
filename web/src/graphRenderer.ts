@@ -1,12 +1,11 @@
 import type { GraphView, Row } from "./types";
+import { type Theme, THEMES } from "./themes";
 
-const PALETTE = ["#89b4fa", "#a6e3a1", "#f9e2af", "#f38ba8", "#cba6f7", "#94e2d5", "#fab387", "#eba0ac"];
 const ROW_H = 24;
 const COL_W = 16;
 const DOT_R = 4.5;
 const PAD_L = 14;
 const SCROLLBAR_W = 10;
-const BG = "#1e1e2e";
 
 /**
  * Custom-drawn commit graph on a Canvas. The viewport is fixed-size; scrolling is managed in JS
@@ -24,6 +23,9 @@ export class GraphRenderer {
   private draggingThumb = false;
   private dragOffset = 0;
   private pressY: number | null = null;
+  private theme: Theme = THEMES.mocha;
+  private fontFamily = "ui-monospace, monospace";
+  private fontSize = 13;
 
   constructor(
     private canvas: HTMLCanvasElement,
@@ -46,6 +48,17 @@ export class GraphRenderer {
     this.scrollTop = 0;
     if (view.rows.length > 0) this.select(0);
     else this.draw();
+  }
+
+  setTheme(theme: Theme): void {
+    this.theme = theme;
+    this.draw();
+  }
+
+  setFont(family: string, size: number): void {
+    this.fontFamily = family;
+    this.fontSize = size;
+    this.draw();
   }
 
   private select(i: number): void {
@@ -182,7 +195,7 @@ export class GraphRenderer {
     // selection highlight band
     if (this.selected >= 0) {
       const sy = this.selected * ROW_H - this.scrollTop;
-      ctx.fillStyle = "rgba(137,180,250,0.13)";
+      ctx.fillStyle = this.theme.selectionBg;
       ctx.fillRect(0, sy, this.vw, ROW_H);
     }
 
@@ -195,7 +208,7 @@ export class GraphRenderer {
       for (const e of row.edges) {
         const x1 = this.x(e.from);
         const x2 = this.x(e.to);
-        ctx.strokeStyle = PALETTE[e.color % PALETTE.length];
+        ctx.strokeStyle = this.theme.lanes[e.color % this.theme.lanes.length];
         ctx.beginPath();
         ctx.moveTo(x1, y);
         if (x1 === x2) ctx.lineTo(x2, yNext);
@@ -205,43 +218,43 @@ export class GraphRenderer {
     }
 
     // nodes + text
-    ctx.font = "13px ui-monospace, monospace";
+    ctx.font = `${this.fontSize}px ${this.fontFamily}`;
     ctx.textBaseline = "middle";
     const textX = this.textStartX();
     for (let i = first; i <= last; i++) {
       const row = rows[i];
       const y = i * ROW_H - this.scrollTop + ROW_H / 2;
-      const color = PALETTE[row.color % PALETTE.length];
+      const color = this.theme.lanes[row.color % this.theme.lanes.length];
 
       ctx.fillStyle = color;
       ctx.beginPath();
       ctx.arc(this.x(row.column), y, DOT_R, 0, Math.PI * 2);
       ctx.fill();
       ctx.lineWidth = 1.5;
-      ctx.strokeStyle = BG;
+      ctx.strokeStyle = this.theme.bg;
       ctx.stroke();
 
       let tx = textX;
       for (const r of row.refs) {
         const w = ctx.measureText(r.name).width + 10;
-        ctx.fillStyle = "rgba(166,227,161,0.18)";
+        ctx.fillStyle = this.theme.refBg;
         roundRect(ctx, tx, y - 9, w, 18, 4);
         ctx.fill();
-        ctx.fillStyle = "#a6e3a1";
+        ctx.fillStyle = this.theme.refFg;
         ctx.fillText(r.name, tx + 5, y);
         tx += w + 5;
       }
-      ctx.fillStyle = "#89b4fa";
+      ctx.fillStyle = this.theme.sha;
       ctx.fillText(row.shortSha, tx, y);
       tx += ctx.measureText(row.shortSha).width + 10;
-      ctx.fillStyle = "#cdd6f4";
+      ctx.fillStyle = this.theme.fg;
       ctx.fillText(row.summary, tx, y);
     }
 
     // scrollbar
     const thumb = this.thumbRect();
     if (thumb) {
-      ctx.fillStyle = "rgba(147,153,178,0.45)";
+      ctx.fillStyle = this.theme.muted;
       roundRect(ctx, this.vw - SCROLLBAR_W + 2, thumb.y, SCROLLBAR_W - 4, thumb.h, 3);
       ctx.fill();
     }

@@ -9,12 +9,50 @@
     <div id="header">
       <span id="title">gitxt</span>
       <span id="status"></span>
+      <button id="open-settings" title="Settings" aria-label="Settings">⚙</button>
     </div>
     <div id="viewport"><canvas id="graph"></canvas></div>
     <div id="detail">
       <div id="detail-meta"></div>
       <div id="detail-diff"></div>
     </div>
+
+    <div id="settings" hidden>
+      <div id="settings-bar">
+        <span class="title">Settings</span>
+        <button id="settings-close">Done</button>
+      </div>
+      <div id="settings-body">
+        <nav id="settings-cats">
+          <button data-cat="appearance" class="active">Appearance</button>
+          <button data-cat="git">Git Identity</button>
+          <button data-cat="about">About</button>
+        </nav>
+        <div id="settings-panes">
+          <section data-pane="appearance">
+            <h3>Appearance</h3>
+            <label>Theme <select id="set-theme"></select></label>
+            <label>Font family <input id="set-font" type="text" spellcheck="false" /></label>
+            <label>Font size <input id="set-fontsize" type="number" min="9" max="28" /></label>
+            <div class="row"><span id="appearance-status"></span></div>
+          </section>
+          <section data-pane="git" hidden>
+            <h3>Global identity <span class="hint">~/.gitconfig</span></h3>
+            <label>Name <input id="git-global-name" type="text" spellcheck="false" /></label>
+            <label>Email <input id="git-global-email" type="text" spellcheck="false" /></label>
+            <h3>This repository <span class="hint">.git/config</span></h3>
+            <label>Name <input id="git-local-name" type="text" spellcheck="false" /></label>
+            <label>Email <input id="git-local-email" type="text" spellcheck="false" /></label>
+            <div class="row"><button id="git-save">Save git identity</button> <span id="git-status"></span></div>
+          </section>
+          <section data-pane="about" hidden>
+            <h3>About</h3>
+            <p>gitxt — a cross-platform commit-graph viewer.</p>
+          </section>
+        </div>
+      </div>
+    </div>
+
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

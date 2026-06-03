@@ -1,13 +1,36 @@
-:root { color-scheme: dark; }
+:root {
+  /* Defaults mirror the "mocha" theme so the first paint is correct before settings load.
+     applyThemeCss() overrides these at runtime. */
+  --bg: #1e1e2e; --surface: #181825; --surface2: #11111b; --border: #313244;
+  --fg: #cdd6f4; --muted: #9399b2; --accent: #f5c2e7; --sha: #89b4fa;
+  --ref-bg: rgba(166,227,161,0.18); --ref-fg: #a6e3a1; --sel: rgba(137,180,250,0.13);
+  --add-bg: rgba(166,227,161,0.13); --add-fg: #a6e3a1;
+  --del-bg: rgba(243,139,168,0.13); --del-fg: #f38ba8; --hunk: #89dceb; --fhdr: #cba6f7;
+  --font-family: ui-monospace, "Cascadia Code", "JetBrains Mono", monospace;
+  --font-size: 13px;
+}
 
 html, body {
   margin: 0;
   height: 100%;
-  background: #1e1e2e;
-  color: #cdd6f4;
-  font-family: ui-monospace, "Cascadia Code", "JetBrains Mono", monospace;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-family);
+  font-size: var(--font-size);
   overflow: hidden;
 }
+
+button, input, select {
+  font-family: var(--font-family);
+  font-size: var(--font-size);
+  color: var(--fg);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 3px 8px;
+}
+button { cursor: pointer; }
+button:hover { border-color: var(--accent); }
 
 #header {
   position: absolute;
@@ -17,13 +40,14 @@ html, body {
   align-items: center;
   gap: 14px;
   padding: 0 12px;
-  background: #181825;
-  border-bottom: 1px solid #313244;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
   z-index: 1;
 }
-
-#title { color: #f5c2e7; font-weight: bold; }
-#status { color: #9399b2; font-size: 12px; }
+#title { color: var(--accent); font-weight: bold; }
+#status { color: var(--muted); font-size: 12px; }
+#open-settings { margin-left: auto; padding: 2px 10px; background: transparent; border-color: transparent; font-size: 19px; line-height: 1; }
+#open-settings:hover { background: var(--surface2); border-color: var(--border); }
 
 #viewport {
   position: absolute;
@@ -31,36 +55,34 @@ html, body {
   bottom: 320px;
   overflow: hidden;
 }
-
 canvas { position: absolute; inset: 0; display: block; }
 
 #detail {
   position: absolute;
   left: 0; right: 0; bottom: 0;
   height: 320px;
-  border-top: 1px solid #313244;
-  background: #181825;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
-
 #detail-meta {
   padding: 8px 12px;
-  border-bottom: 1px solid #313244;
+  border-bottom: 1px solid var(--border);
   font-size: 12px;
   line-height: 1.5;
   flex: 0 0 auto;
   max-height: 130px;
   overflow: auto;
 }
-#detail-meta .sha { color: #89b4fa; }
-#detail-meta .who { color: #cdd6f4; }
-#detail-meta .when { color: #9399b2; }
+#detail-meta .sha { color: var(--sha); }
+#detail-meta .who { color: var(--fg); }
+#detail-meta .when { color: var(--muted); }
 #detail-meta .subject { color: #f9e2af; font-weight: bold; }
 #detail-meta .chip {
   display: inline-block; padding: 0 6px; margin-right: 4px;
-  border-radius: 4px; background: rgba(166,227,161,0.18); color: #a6e3a1;
+  border-radius: 4px; background: var(--ref-bg); color: var(--ref-fg);
 }
 
 #detail-diff {
@@ -70,11 +92,47 @@ canvas { position: absolute; inset: 0; display: block; }
   white-space: pre;
   padding: 6px 0;
 }
-#detail-diff .files { padding: 0 12px 6px; color: #9399b2; }
-#detail-diff .files .f { color: #cdd6f4; }
+#detail-diff .files { padding: 0 12px 6px; color: var(--muted); }
+#detail-diff .files .f { color: var(--fg); }
 #detail-diff .line { padding: 0 12px; }
-#detail-diff .add { background: rgba(166,227,161,0.13); color: #a6e3a1; }
-#detail-diff .del { background: rgba(243,139,168,0.13); color: #f38ba8; }
-#detail-diff .hunk { color: #89dceb; }
-#detail-diff .fhdr { color: #cba6f7; }
+#detail-diff .add { background: var(--add-bg); color: var(--add-fg); }
+#detail-diff .del { background: var(--del-bg); color: var(--del-fg); }
+#detail-diff .hunk { color: var(--hunk); }
+#detail-diff .fhdr { color: var(--fhdr); }
 #detail-diff .trunc { color: #fab387; padding: 6px 12px; }
+
+/* ── Settings view (full-area overlay) ─────────────────────────────────── */
+#settings {
+  position: absolute; inset: 0; z-index: 10;
+  background: var(--bg);
+  display: flex; flex-direction: column;
+}
+#settings[hidden] { display: none; }
+#settings-bar {
+  height: 42px; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 14px; border-bottom: 1px solid var(--border); background: var(--surface);
+}
+#settings-bar .title { color: var(--accent); font-weight: bold; }
+#settings-body { flex: 1 1 auto; display: flex; min-height: 0; }
+#settings-cats {
+  width: 180px; flex: 0 0 auto; padding: 12px 8px;
+  border-right: 1px solid var(--border); background: var(--surface);
+  display: flex; flex-direction: column; gap: 4px;
+}
+#settings-cats button {
+  text-align: left; background: transparent; border-color: transparent; padding: 6px 10px;
+}
+#settings-cats button:hover { background: var(--surface2); }
+#settings-cats button.active { background: var(--surface2); border-color: var(--border); color: var(--accent); }
+#settings-panes { flex: 1 1 auto; padding: 18px 22px; overflow: auto; }
+#settings-panes h3 { color: var(--accent); margin: 18px 0 8px; font-size: 13px; }
+#settings-panes h3:first-child { margin-top: 0; }
+#settings-panes h3 .hint { color: var(--muted); font-weight: normal; font-size: 11px; }
+#settings-panes label {
+  display: grid; grid-template-columns: 130px minmax(220px, 340px);
+  align-items: center; gap: 12px; margin: 10px 0; color: var(--muted);
+}
+#settings-panes label > select,
+#settings-panes label > input { width: 100%; box-sizing: border-box; }
+#settings-panes .row { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
+#git-status, #appearance-status { color: var(--muted); }

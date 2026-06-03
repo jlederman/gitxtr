@@ -5,6 +5,8 @@ using Gitxt.Infrastructure;
 using Photino.NET;
 
 var service = new GraphQueryService(new LibGit2SharpRepositoryReader(), new GraphLayoutEngine());
+var settingsStore = new JsonSettingsStore();
+var gitConfig = new LibGit2SharpGitConfigService();
 
 // Headless dump mode (dev/verification): gitxt --dump <repoPath> [limit]
 if (args is ["--dump", var dumpPath, ..])
@@ -68,6 +70,41 @@ string Handle(string message)
                 string sha = root.GetProperty("sha").GetString() ?? "";
                 CommitDetailsDto details = service.GetCommitDetails(defaultRepo, sha);
                 return JsonSerializer.Serialize(new { id, ok = true, data = details }, jsonOpts);
+
+            case "getSettings":
+                return JsonSerializer.Serialize(new { id, ok = true, data = settingsStore.Load() }, jsonOpts);
+
+            case "saveSettings":
+            {
+                var se = root.GetProperty("settings");
+                var cur = settingsStore.Load();
+                var updated = cur with
+                {
+                    Theme = se.TryGetProperty("theme", out var th) && th.ValueKind == JsonValueKind.String ? th.GetString()! : cur.Theme,
+                    FontFamily = se.TryGetProperty("fontFamily", out var ff) && ff.ValueKind == JsonValueKind.String ? ff.GetString()! : cur.FontFamily,
+                    FontSize = se.TryGetProperty("fontSize", out var fz) && fz.ValueKind == JsonValueKind.Number ? fz.GetInt32() : cur.FontSize,
+                    DetailHeight = se.TryGetProperty("detailHeight", out var dh) && dh.ValueKind == JsonValueKind.Number ? dh.GetInt32() : cur.DetailHeight,
+                    LastRepo = se.TryGetProperty("lastRepo", out var lrp) && lrp.ValueKind == JsonValueKind.String ? lrp.GetString() : cur.LastRepo,
+                };
+                settingsStore.Save(updated);
+                return JsonSerializer.Serialize(new { id, ok = true }, jsonOpts);
+            }
+
+            case "getGitIdentity":
+            {
+                string? gp = root.TryGetProperty("repoPath", out var gpr) && gpr.ValueKind == JsonValueKind.String ? gpr.GetString() : defaultRepo;
+                return JsonSerializer.Serialize(new { id, ok = true, data = gitConfig.Get(gp) }, jsonOpts);
+            }
+
+            case "setGitIdentity":
+            {
+                string? sp = root.TryGetProperty("repoPath", out var spr) && spr.ValueKind == JsonValueKind.String ? spr.GetString() : defaultRepo;
+                var scope = root.GetProperty("scope").GetString() == "local" ? GitConfigScope.Local : GitConfigScope.Global;
+                string nm = root.TryGetProperty("name", out var nmv) ? nmv.GetString() ?? "" : "";
+                string em = root.TryGetProperty("email", out var emv) ? emv.GetString() ?? "" : "";
+                gitConfig.Set(sp, scope, nm, em);
+                return JsonSerializer.Serialize(new { id, ok = true }, jsonOpts);
+            }
 
             default:
                 return JsonSerializer.Serialize(new { id, ok = false, error = $"unknown request type '{type}'" }, jsonOpts);
