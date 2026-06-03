@@ -21,7 +21,7 @@ const renderer = new GraphRenderer(canvas, viewport, (row: Row) => {
 
 const DEFAULT_SETTINGS: BootSettings = {
   theme: "mocha", fontFamily: "ui-monospace, monospace", fontSize: 13,
-  detailHeight: 320, detailTopHeight: 200, repos: [], lastRepo: null, currentRepo: null,
+  detailHeight: 320, detailTopHeight: 200, detailMetaHeight: 120, repos: [], lastRepo: null, currentRepo: null,
 };
 
 function applyDetailHeight(px: number): void {
@@ -29,6 +29,9 @@ function applyDetailHeight(px: number): void {
 }
 function applyDetailTopHeight(px: number): void {
   document.documentElement.style.setProperty("--detail-top-height", `${px}px`);
+}
+function applyDetailMetaHeight(px: number): void {
+  document.documentElement.style.setProperty("--detail-meta-height", `${px}px`);
 }
 
 async function boot(): Promise<void> {
@@ -42,8 +45,10 @@ async function boot(): Promise<void> {
   initSettings({ renderer, settings, getRepoPath: getCurrentRepo });
   applyDetailHeight(settings.detailHeight);
   applyDetailTopHeight(settings.detailTopHeight);
+  applyDetailMetaHeight(settings.detailMetaHeight);
 
   const detailEl = document.getElementById("detail") as HTMLElement;
+  const detailTopEl = document.getElementById("detail-top") as HTMLElement;
   // Outer divider: graph ↔ detail panel.
   initSplitter({
     handle: document.getElementById("vsplit") as HTMLElement,
@@ -61,6 +66,15 @@ async function boot(): Promise<void> {
     measure: (y) => y - detailEl.getBoundingClientRect().top,
     onResize: applyDetailTopHeight,
     onCommit: (px) => void request("saveSettings", { settings: { detailTopHeight: px } }),
+  });
+  // Divider within the detail panel: commit message ↔ changed files.
+  initSplitter({
+    handle: document.getElementById("msplit") as HTMLElement,
+    min: 40,
+    max: () => detailTopEl.clientHeight - 50,
+    measure: (y) => y - detailTopEl.getBoundingClientRect().top,
+    onResize: applyDetailMetaHeight,
+    onCommit: (px) => void request("saveSettings", { settings: { detailMetaHeight: px } }),
   });
 
   initRepos({

@@ -9,6 +9,7 @@ export interface Settings {
   fontSize: number;
   detailHeight: number;
   detailTopHeight: number;
+  detailMetaHeight: number;
   repos: string[];
   lastRepo: string | null;
 }

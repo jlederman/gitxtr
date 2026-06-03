@@ -114,6 +114,7 @@ string Handle(PhotinoWindow w, string message)
                     FontSize = se.TryGetProperty("fontSize", out var fz) && fz.ValueKind == JsonValueKind.Number ? (int)Math.Round(fz.GetDouble()) : cur.FontSize,
                     DetailHeight = se.TryGetProperty("detailHeight", out var dh) && dh.ValueKind == JsonValueKind.Number ? (int)Math.Round(dh.GetDouble()) : cur.DetailHeight,
                     DetailTopHeight = se.TryGetProperty("detailTopHeight", out var dth) && dth.ValueKind == JsonValueKind.Number ? (int)Math.Round(dth.GetDouble()) : cur.DetailTopHeight,
+                    DetailMetaHeight = se.TryGetProperty("detailMetaHeight", out var dmh) && dmh.ValueKind == JsonValueKind.Number ? (int)Math.Round(dmh.GetDouble()) : cur.DetailMetaHeight,
                     LastRepo = se.TryGetProperty("lastRepo", out var lrp) && lrp.ValueKind == JsonValueKind.String ? lrp.GetString() : cur.LastRepo,
                 };
                 settingsStore.Save(updated);

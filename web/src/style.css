@@ -96,11 +96,10 @@ canvas { position: absolute; inset: 0; display: block; }
 }
 #detail-meta {
   padding: 8px 12px;
-  border-bottom: 1px solid var(--border);
   font-size: var(--font-size);
   line-height: 1.5;
   flex: 0 0 auto;
-  max-height: 55%;
+  height: var(--detail-meta-height, 120px);
   overflow: auto;
 }
 #detail-meta .sha { color: var(--sha); }
@@ -127,6 +126,13 @@ canvas { position: absolute; inset: 0; display: block; }
   white-space: pre;
   padding: 6px 0;
 }
+#msplit {
+  flex: 0 0 auto;
+  height: 6px;
+  cursor: row-resize;
+  background: var(--border);
+}
+#msplit:hover { background: var(--accent); }
 #detail-files {
   flex: 1 1 auto;
   min-height: 0;

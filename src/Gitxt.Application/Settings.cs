@@ -9,6 +9,7 @@ public sealed record Settings
     public int FontSize { get; init; } = 13;
     public int DetailHeight { get; init; } = 320;
     public int DetailTopHeight { get; init; } = 200;
+    public int DetailMetaHeight { get; init; } = 120;
     public IReadOnlyList<string> Repos { get; init; } = [];
     public string? LastRepo { get; init; }
 }
