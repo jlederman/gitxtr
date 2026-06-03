@@ -7,6 +7,7 @@ export interface Settings {
   fontFamily: string;
   fontSize: number;
   detailHeight: number;
+  detailTopHeight: number;
   repos: string[];
   lastRepo: string | null;
 }

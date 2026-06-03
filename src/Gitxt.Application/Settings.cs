@@ -8,6 +8,7 @@ public sealed record Settings
     public string FontFamily { get; init; } = "ui-monospace, monospace";
     public int FontSize { get; init; } = 13;
     public int DetailHeight { get; init; } = 320;
+    public int DetailTopHeight { get; init; } = 200;
     public IReadOnlyList<string> Repos { get; init; } = [];
     public string? LastRepo { get; init; }
 }

@@ -28,7 +28,7 @@ export function mockResponse(type: string, payload: Record<string, unknown>): un
     };
   }
   if (type === "getSettings")
-    return { theme: "mocha", fontFamily: "ui-monospace, monospace", fontSize: 13, detailHeight: 320, repos: [], lastRepo: null };
+    return { theme: "mocha", fontFamily: "ui-monospace, monospace", fontSize: 13, detailHeight: 320, detailTopHeight: 200, repos: [], lastRepo: null };
   if (type === "saveSettings") return {};
   if (type === "getGitIdentity")
     return { globalName: "Mock User", globalEmail: "mock@example.com", localName: null, localEmail: null };

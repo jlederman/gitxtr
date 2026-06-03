@@ -8,6 +8,7 @@
   --del-bg: rgba(243,139,168,0.13); --del-fg: #f38ba8; --hunk: #89dceb; --fhdr: #cba6f7;
   --font-family: ui-monospace, "Cascadia Code", "JetBrains Mono", monospace;
   --font-size: 13px;
+  --detail-height: 320px;
 }
 
 html, body {
@@ -52,17 +53,35 @@ button:hover { border-color: var(--accent); }
 #viewport {
   position: absolute;
   top: 35px; left: 0; right: 0;
-  bottom: 320px;
+  bottom: var(--detail-height, 320px);
   overflow: hidden;
 }
 canvas { position: absolute; inset: 0; display: block; }
 
+#vsplit {
+  position: absolute;
+  left: 0; right: 0;
+  bottom: var(--detail-height, 320px);
+  height: 7px;
+  margin-bottom: -4px;
+  cursor: row-resize;
+  z-index: 2;
+}
+#vsplit:hover { background: var(--accent); opacity: 0.4; }
+
 #detail {
   position: absolute;
   left: 0; right: 0; bottom: 0;
-  height: 320px;
+  height: var(--detail-height, 320px);
   border-top: 1px solid var(--border);
   background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+#detail-top {
+  flex: 0 0 var(--detail-top-height, 200px);
+  min-height: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -73,7 +92,7 @@ canvas { position: absolute; inset: 0; display: block; }
   font-size: 12px;
   line-height: 1.5;
   flex: 0 0 auto;
-  max-height: 130px;
+  max-height: 55%;
   overflow: auto;
 }
 #detail-meta .sha { color: var(--sha); }
@@ -85,18 +104,25 @@ canvas { position: absolute; inset: 0; display: block; }
   border-radius: 4px; background: var(--ref-bg); color: var(--ref-fg);
 }
 
+#dsplit {
+  flex: 0 0 auto;
+  height: 6px;
+  cursor: row-resize;
+  background: var(--border);
+}
+#dsplit:hover { background: var(--accent); }
 #detail-diff {
   flex: 1 1 auto;
+  min-height: 0;
   overflow: auto;
   font-size: 12px;
   white-space: pre;
   padding: 6px 0;
 }
 #detail-files {
-  flex: 0 0 auto;
-  max-height: 130px;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow: auto;
-  border-bottom: 1px solid var(--border);
   font-size: 12px;
   padding: 4px 0;
 }

@@ -84,6 +84,7 @@ string Handle(string message)
                     FontFamily = se.TryGetProperty("fontFamily", out var ff) && ff.ValueKind == JsonValueKind.String ? ff.GetString()! : cur.FontFamily,
                     FontSize = se.TryGetProperty("fontSize", out var fz) && fz.ValueKind == JsonValueKind.Number ? fz.GetInt32() : cur.FontSize,
                     DetailHeight = se.TryGetProperty("detailHeight", out var dh) && dh.ValueKind == JsonValueKind.Number ? dh.GetInt32() : cur.DetailHeight,
+                    DetailTopHeight = se.TryGetProperty("detailTopHeight", out var dth) && dth.ValueKind == JsonValueKind.Number ? dth.GetInt32() : cur.DetailTopHeight,
                     LastRepo = se.TryGetProperty("lastRepo", out var lrp) && lrp.ValueKind == JsonValueKind.String ? lrp.GetString() : cur.LastRepo,
                 };
                 settingsStore.Save(updated);
