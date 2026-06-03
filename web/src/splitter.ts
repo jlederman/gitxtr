@@ -20,7 +20,9 @@ export function initSplitter(opts: {
   });
   opts.handle.addEventListener("pointermove", (e) => {
     if (!dragging) return;
-    latest = Math.max(opts.min, Math.min(opts.max(), opts.measure(e.clientY)));
+    // Round to whole px: avoids sub-pixel rendering and a fractional value that the host's
+    // integer settings parser would reject (which silently dropped persisted sizes).
+    latest = Math.round(Math.max(opts.min, Math.min(opts.max(), opts.measure(e.clientY))));
     opts.onResize(latest);
   });
   opts.handle.addEventListener("pointerup", (e) => {

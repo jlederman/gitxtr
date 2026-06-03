@@ -107,9 +107,9 @@ string Handle(PhotinoWindow w, string message)
                 {
                     Theme = se.TryGetProperty("theme", out var th) && th.ValueKind == JsonValueKind.String ? th.GetString()! : cur.Theme,
                     FontFamily = se.TryGetProperty("fontFamily", out var ff) && ff.ValueKind == JsonValueKind.String ? ff.GetString()! : cur.FontFamily,
-                    FontSize = se.TryGetProperty("fontSize", out var fz) && fz.ValueKind == JsonValueKind.Number ? fz.GetInt32() : cur.FontSize,
-                    DetailHeight = se.TryGetProperty("detailHeight", out var dh) && dh.ValueKind == JsonValueKind.Number ? dh.GetInt32() : cur.DetailHeight,
-                    DetailTopHeight = se.TryGetProperty("detailTopHeight", out var dth) && dth.ValueKind == JsonValueKind.Number ? dth.GetInt32() : cur.DetailTopHeight,
+                    FontSize = se.TryGetProperty("fontSize", out var fz) && fz.ValueKind == JsonValueKind.Number ? (int)Math.Round(fz.GetDouble()) : cur.FontSize,
+                    DetailHeight = se.TryGetProperty("detailHeight", out var dh) && dh.ValueKind == JsonValueKind.Number ? (int)Math.Round(dh.GetDouble()) : cur.DetailHeight,
+                    DetailTopHeight = se.TryGetProperty("detailTopHeight", out var dth) && dth.ValueKind == JsonValueKind.Number ? (int)Math.Round(dth.GetDouble()) : cur.DetailTopHeight,
                     LastRepo = se.TryGetProperty("lastRepo", out var lrp) && lrp.ValueKind == JsonValueKind.String ? lrp.GetString() : cur.LastRepo,
                 };
                 settingsStore.Save(updated);
