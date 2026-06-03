@@ -1,4 +1,13 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <WebDir>$(MSBuildProjectDirectory)/../../web</WebDir>
+    <WebBundle>$(MSBuildProjectDirectory)/obj/webdist/index.html</WebBundle>
+  </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Gitxt.Application\Gitxt.Application.csproj" />
@@ -9,15 +18,20 @@
     <PackageReference Include="Photino.NET" Version="4.0.16" />
   </ItemGroup>
 
+  <!-- The Vite single-file bundle is a GENERATED artifact, not a source file. BuildWebUi emits it
+       into obj/webdist (a git-ignored build-intermediate dir) and the Content Link below copies it
+       to wwwroot/ in the build OUTPUT — so nothing generated lands in the source tree. It runs
+       during the build (so `dotnet run` works from a clean checkout) and is incremental via
+       Inputs/Outputs. Requires Node/npm on PATH. -->
   <ItemGroup>
-    <Content Include="wwwroot/**/*" CopyToOutputDirectory="PreserveNewest" />
+    <WebUiSource Include="$(WebDir)/index.html;$(WebDir)/package.json;$(WebDir)/vite.config.ts;$(WebDir)/tsconfig.json" />
+    <WebUiSource Include="$(WebDir)/src/**/*" />
+    <Content Include="obj/webdist/index.html" Link="wwwroot/index.html" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net10.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
+  <Target Name="BuildWebUi" BeforeTargets="AssignTargetPaths" Inputs="@(WebUiSource)" Outputs="$(WebBundle)">
+    <Exec Command="npm install" WorkingDirectory="$(WebDir)" Condition="!Exists('$(WebDir)/node_modules')" />
+    <Exec Command="npm run build" WorkingDirectory="$(WebDir)" />
+  </Target>
 
 </Project>
