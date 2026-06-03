@@ -99,7 +99,7 @@ string Handle(PhotinoWindow w, string message)
                     ?? (!string.IsNullOrEmpty(st.LastRepo) && reader.IsValid(st.LastRepo!) ? st.LastRepo : null)
                     ?? st.Repos.FirstOrDefault(reader.IsValid);
                 return JsonSerializer.Serialize(new { id, ok = true, data = new {
-                    st.Theme, st.FontFamily, st.FontSize, st.DetailHeight, st.DetailTopHeight, st.Repos, st.LastRepo, currentRepo
+                    st.Theme, st.FontFamily, st.FontSize, st.DetailHeight, st.DetailTopHeight, st.DetailMetaHeight, st.Repos, st.LastRepo, currentRepo
                 } }, jsonOpts);
             }
 
