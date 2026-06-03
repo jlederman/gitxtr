@@ -97,7 +97,7 @@ canvas { position: absolute; inset: 0; display: block; }
 #detail-meta {
   padding: 8px 12px;
   border-bottom: 1px solid var(--border);
-  font-size: 12px;
+  font-size: var(--font-size);
   line-height: 1.5;
   flex: 0 0 auto;
   max-height: 55%;
@@ -123,7 +123,7 @@ canvas { position: absolute; inset: 0; display: block; }
   flex: 1 1 auto;
   min-height: 0;
   overflow: auto;
-  font-size: 12px;
+  font-size: var(--font-size);
   white-space: pre;
   padding: 6px 0;
 }
@@ -131,7 +131,7 @@ canvas { position: absolute; inset: 0; display: block; }
   flex: 1 1 auto;
   min-height: 0;
   overflow: auto;
-  font-size: 12px;
+  font-size: var(--font-size);
   padding: 4px 0;
 }
 #detail-files .fhead { padding: 2px 12px 4px; color: var(--muted); }
