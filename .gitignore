@@ -1,0 +1,15 @@
+# .NET
+bin/
+obj/
+*.user
+.vs/
+
+# Node / Vite (web/)
+node_modules/
+
+# OS
+.DS_Store
+
+# Note: src/Gitxt.App/wwwroot/ holds the Vite single-file build output. It is left
+# tracked on purpose so `dotnet run` works from a fresh clone without a Node build.
+# Regenerate it with: (cd web && npm run build)
