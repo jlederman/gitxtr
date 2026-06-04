@@ -30,6 +30,7 @@ export class GraphRenderer {
   private theme: Theme = THEMES.mocha;
   private fontFamily = "ui-monospace, monospace";
   private fontSize = 13;
+  private filter: ReadonlySet<string> | null = null;
 
   constructor(
     private canvas: HTMLCanvasElement,
@@ -55,6 +56,11 @@ export class GraphRenderer {
     this.scrollLeft = 0;
     if (view.rows.length > 0) this.select(0);
     else this.draw();
+  }
+
+  setFilter(shas: ReadonlySet<string> | null): void {
+    this.filter = shas;
+    this.draw();
   }
 
   focus(): void {
@@ -296,6 +302,9 @@ export class GraphRenderer {
       const row = rows[i];
       const y = i * ROW_H - this.scrollTop + ROW_H / 2;
       const color = this.theme.lanes[row.color % this.theme.lanes.length];
+      const dimmed = this.filter !== null && !this.filter.has(row.sha);
+
+      ctx.globalAlpha = dimmed ? 0.22 : 1;
 
       ctx.fillStyle = color;
       ctx.beginPath();
@@ -322,6 +331,7 @@ export class GraphRenderer {
       ctx.fillText(row.summary, tx, y);
       maxRight = Math.max(maxRight, tx + ctx.measureText(row.summary).width);
     }
+    ctx.globalAlpha = 1;
 
     ctx.restore();
 

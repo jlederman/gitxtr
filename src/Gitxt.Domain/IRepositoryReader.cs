@@ -15,6 +15,9 @@ public interface IRepositoryReader
     /// <summary>Metadata, changed files, and the unified diff for a single commit.</summary>
     CommitDetail ReadCommitDetail(string repoPath, CommitId id);
 
+    /// <summary>SHAs of commits (newest-first) that touched <paramref name="filePath"/>.</summary>
+    IReadOnlyList<string> ReadCommitShasByPath(string repoPath, string filePath);
+
     /// <summary>True if <paramref name="repoPath"/> is a valid git repository.</summary>
     bool IsValid(string repoPath);
 }

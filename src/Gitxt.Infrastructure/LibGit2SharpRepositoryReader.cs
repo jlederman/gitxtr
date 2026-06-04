@@ -52,6 +52,27 @@ public sealed class LibGit2SharpRepositoryReader : IRepositoryReader
         return refs;
     }
 
+    public IReadOnlyList<string> ReadCommitShasByPath(string repoPath, string filePath)
+    {
+        using var repo = new Repository(repoPath);
+        var startPoints = repo.Branches
+            .Select(b => b.Tip)
+            .OfType<LibCommit>()
+            .Concat(repo.Head?.Tip is { } h ? [h] : [])
+            .ToList<object>();
+        if (startPoints.Count == 0) return [];
+
+        var filter = new CommitFilter
+        {
+            IncludeReachableFrom = startPoints,
+            SortBy = CommitSortStrategies.Topological | CommitSortStrategies.Time,
+        };
+
+        return repo.Commits.QueryBy(filePath, filter)
+            .Select(entry => entry.Commit.Sha)
+            .ToList();
+    }
+
     public bool IsValid(string repoPath) =>
         !string.IsNullOrEmpty(repoPath) && Repository.IsValid(repoPath);
 

@@ -83,40 +83,75 @@ async function boot(): Promise<void> {
   }
   applyAppearance(settings, renderer);
   initSettings({ renderer, settings, getRepoPath: getCurrentRepo });
-  // Clamp persisted sizes to the current window so a value saved at a larger window
-  // size never collapses the graph pane or the diff pane to zero on boot.
+  // Minimum visible heights for each pane (excluding splitter handles):
+  //   diff ≥ 80px, file list ≥ 60px, meta ≥ 60px
+  // → detail-top min = 60 (meta) + 6 (msplit) + 60 (files) = 126 → 130
+  // → detail min     = 130 (top) + 6 (dsplit) + 80 (diff)  = 216 → 220
+  const DETAIL_MIN   = 220;
+  const TOP_MIN      = 130;
+  const META_MIN     = 60;
+  const DIFF_RESERVE = 86;  // 6px dsplit + 80px diff
+  const FILE_RESERVE = 66;  // 6px msplit + 60px files
+
+  // Clamp all three sizes on boot: each inner pane must fit inside its container.
   const maxDetail = window.innerHeight - 140;
-  applyDetailHeight(Math.max(90, Math.min(maxDetail, settings.detailHeight)));
-  applyDetailTopHeight(settings.detailTopHeight);
-  applyDetailMetaHeight(settings.detailMetaHeight);
+  let curDetailHeight     = Math.max(DETAIL_MIN, Math.min(maxDetail, settings.detailHeight));
+  let curDetailTopHeight  = Math.max(TOP_MIN,    Math.min(curDetailHeight - DIFF_RESERVE, settings.detailTopHeight));
+  let curDetailMetaHeight = Math.max(META_MIN,   Math.min(curDetailTopHeight - FILE_RESERVE, settings.detailMetaHeight));
+  applyDetailHeight(curDetailHeight);
+  applyDetailTopHeight(curDetailTopHeight);
+  applyDetailMetaHeight(curDetailMetaHeight);
 
   const detailEl = document.getElementById("detail") as HTMLElement;
   const detailTopEl = document.getElementById("detail-top") as HTMLElement;
   // Outer divider: graph ↔ detail panel.
   initSplitter({
     handle: document.getElementById("vsplit") as HTMLElement,
-    min: 90,
+    min: DETAIL_MIN,
     max: () => window.innerHeight - 140,
     measure: (y) => window.innerHeight - y,
-    onResize: applyDetailHeight,
+    onResize: (px) => {
+      curDetailHeight = px;
+      applyDetailHeight(px);
+      // Cascade: shrink inner panes if they no longer fit.
+      const cappedTop = Math.min(curDetailTopHeight, px - DIFF_RESERVE);
+      if (cappedTop < curDetailTopHeight) {
+        curDetailTopHeight = Math.max(TOP_MIN, cappedTop);
+        applyDetailTopHeight(curDetailTopHeight);
+        const cappedMeta = Math.min(curDetailMetaHeight, curDetailTopHeight - FILE_RESERVE);
+        if (cappedMeta < curDetailMetaHeight) {
+          curDetailMetaHeight = Math.max(META_MIN, cappedMeta);
+          applyDetailMetaHeight(curDetailMetaHeight);
+        }
+      }
+    },
     onCommit: (px) => void request("saveSettings", { settings: { detailHeight: px } }),
   });
   // Inner divider: (commit info + changed files) ↔ diff.
   initSplitter({
     handle: document.getElementById("dsplit") as HTMLElement,
-    min: 60,
-    max: () => detailEl.clientHeight - 80,
+    min: TOP_MIN,
+    max: () => curDetailHeight - DIFF_RESERVE,
     measure: (y) => y - detailEl.getBoundingClientRect().top,
-    onResize: applyDetailTopHeight,
+    onResize: (px) => {
+      curDetailTopHeight = px;
+      applyDetailTopHeight(px);
+      // Cascade: shrink meta pane if it no longer fits.
+      const cappedMeta = Math.min(curDetailMetaHeight, px - FILE_RESERVE);
+      if (cappedMeta < curDetailMetaHeight) {
+        curDetailMetaHeight = Math.max(META_MIN, cappedMeta);
+        applyDetailMetaHeight(curDetailMetaHeight);
+      }
+    },
     onCommit: (px) => void request("saveSettings", { settings: { detailTopHeight: px } }),
   });
   // Divider within the detail panel: commit message ↔ changed files.
   initSplitter({
     handle: document.getElementById("msplit") as HTMLElement,
-    min: 40,
-    max: () => detailTopEl.clientHeight - 50,
+    min: META_MIN,
+    max: () => curDetailTopHeight - FILE_RESERVE,
     measure: (y) => y - detailTopEl.getBoundingClientRect().top,
-    onResize: applyDetailMetaHeight,
+    onResize: (px) => { curDetailMetaHeight = px; applyDetailMetaHeight(px); },
     onCommit: (px) => void request("saveSettings", { settings: { detailMetaHeight: px } }),
   });
 
@@ -226,29 +261,57 @@ function makeWipRow(firstReal: Row | undefined): Row {
   };
 }
 
-function filterView(view: GraphView, query: string): GraphView {
-  const q = query.trim().toLowerCase();
-  if (!q) return view;
-  const rows = view.rows.filter(r =>
-    r.sha.toLowerCase().startsWith(q) ||
-    r.shortSha.toLowerCase().startsWith(q) ||
-    r.summary.toLowerCase().includes(q) ||
-    r.author.toLowerCase().includes(q) ||
-    r.refs.some(ref => ref.name.toLowerCase().includes(q))
-  );
-  return { rows: rows.map(r => ({ ...r, column: 0, edges: [] })), width: 0, truncated: view.truncated };
+function textMatchesSha(q: string, row: Row): boolean {
+  return row.sha.toLowerCase().startsWith(q) ||
+    row.shortSha.toLowerCase().startsWith(q) ||
+    row.summary.toLowerCase().includes(q) ||
+    row.author.toLowerCase().includes(q) ||
+    row.refs.some(ref => ref.name.toLowerCase().includes(q));
 }
 
 function applyFilter(): void {
-  const q = searchEl.value.trim();
-  const filtered = filterView(fullView, q);
-  // Prepend the WIP row only when not filtering — it doesn't make sense as a search result.
-  const display: GraphView = (!q && fullView.hasUncommittedChanges)
-    ? { ...filtered, rows: [makeWipRow(fullView.rows[0]), ...filtered.rows] }
-    : filtered;
-  renderer.setView(display);
-  if (q) statusEl.textContent = `${filtered.rows.length} of ${fullView.rows.length} commits match`;
-  else statusEl.textContent = `${fullView.rows.length} commits${fullView.truncated ? " (truncated)" : ""}`;
+  const raw = searchEl.value.trim();
+
+  if (!raw) {
+    renderer.setFilter(null);
+    const display: GraphView = fullView.hasUncommittedChanges
+      ? { ...fullView, rows: [makeWipRow(fullView.rows[0]), ...fullView.rows] }
+      : fullView;
+    renderer.setView(display);
+    statusEl.textContent = `${fullView.rows.length} commits${fullView.truncated ? " (truncated)" : ""}`;
+    return;
+  }
+
+  if (raw.startsWith("path:")) {
+    const filePath = raw.slice(5).trim();
+    if (!filePath) return;
+    const repo = getCurrentRepo();
+    if (!repo) return;
+    void applyPathFilter(repo, filePath);
+    return;
+  }
+
+  // Text search: dim non-matching rows in the graph to preserve structure.
+  const q = raw.toLowerCase();
+  const matchSet = new Set(fullView.rows.filter(r => textMatchesSha(q, r)).map(r => r.sha));
+  renderer.setFilter(matchSet);
+  renderer.setView(fullView);
+  statusEl.textContent = `${matchSet.size} of ${fullView.rows.length} commits match`;
+}
+
+async function applyPathFilter(repo: string, filePath: string): Promise<void> {
+  statusEl.textContent = "searching…";
+  try {
+    const shas = await request<string[]>("getCommitsByPath", { repoPath: repo, path: filePath });
+    const shaSet = new Set(shas);
+    const matched = fullView.rows.filter(r => shaSet.has(r.sha));
+    const display: GraphView = { rows: matched.map(r => ({ ...r, column: 0, edges: [] })), width: 0, truncated: fullView.truncated };
+    renderer.setFilter(null);
+    renderer.setView(display);
+    statusEl.textContent = `${matched.length} commits touch ${filePath}`;
+  } catch (e) {
+    statusEl.textContent = `path filter error: ${e instanceof Error ? e.message : String(e)}`;
+  }
 }
 
 async function branchOp(repo: string, op: string, params: Record<string, unknown>): Promise<void> {

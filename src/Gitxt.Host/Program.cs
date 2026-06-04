@@ -76,6 +76,7 @@ var dispatcher = new MessageDispatcher(
         ["workingTreeOp"]    = new WorkingTreeOpHandler(workingTree, fallbackRepo),
         ["createCommit"]     = new CreateCommitHandler(workingTree, fallbackRepo),
         ["getCommitDetails"] = new GetCommitDetailsHandler(service, fallbackRepo),
+        ["getCommitsByPath"] = new GetCommitsByPathHandler(reader, fallbackRepo),
         ["getSettings"]      = new GetSettingsHandler(settingsStore, reader, cliRepo),
         ["saveSettings"]     = new SaveSettingsHandler(settingsStore),
         ["addRepo"]          = new AddRepoHandler(settingsStore, reader),
