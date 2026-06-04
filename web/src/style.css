@@ -47,7 +47,7 @@ button:hover { border-color: var(--accent); }
 }
 #title { color: var(--accent); font-weight: bold; }
 #status { color: var(--muted); font-size: 12px; }
-#open-settings { margin-left: auto; padding: 2px 10px; background: transparent; border-color: transparent; font-size: 19px; line-height: 1; }
+#open-settings { padding: 2px 10px; background: transparent; border-color: transparent; font-size: 19px; line-height: 1; }
 #open-settings:hover { background: var(--surface2); border-color: var(--border); }
 #repo-select { max-width: 220px; padding: 2px 6px; }
 #add-repo { padding: 2px 8px; }
@@ -228,3 +228,57 @@ canvas { position: absolute; inset: 0; display: block; }
 #settings-panes label > input { width: 100%; box-sizing: border-box; }
 #settings-panes .row { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
 #git-status, #appearance-status { color: var(--muted); }
+
+/* ── Keyboard shortcuts panel ───────────────────────────────────────────── */
+#shortcuts {
+  position: absolute; inset: 0; z-index: 10;
+  background: rgba(0,0,0,0.6);
+  display: flex; align-items: center; justify-content: center;
+}
+#shortcuts[hidden] { display: none; }
+#shortcuts-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  width: 480px;
+  max-height: 80vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+#shortcuts-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 14px; border-bottom: 1px solid var(--border); background: var(--surface);
+  height: 42px; flex-shrink: 0;
+}
+#shortcuts-bar .title { color: var(--accent); font-weight: bold; }
+#shortcuts-body { overflow-y: auto; padding: 16px 22px 22px; }
+#shortcuts-body section { margin-bottom: 20px; }
+#shortcuts-body h3 { color: var(--accent); font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 8px; }
+#shortcuts-body table { width: 100%; border-collapse: collapse; }
+#shortcuts-body td { padding: 5px 0; vertical-align: top; }
+#shortcuts-body td:first-child { width: 180px; color: var(--sha); font-family: var(--font-family); white-space: nowrap; }
+#shortcuts-body td:last-child { color: var(--fg); }
+#open-shortcuts { margin-left: auto; padding: 2px 8px; background: transparent; border-color: transparent; }
+#open-shortcuts:hover { background: var(--surface2); border-color: var(--border); }
+
+/* ── Context menu ───────────────────────────────────────────────────────── */
+#ctx-menu {
+  position: fixed;
+  z-index: 100;
+  min-width: 160px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 0;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.45);
+}
+#ctx-menu[hidden] { display: none; }
+#ctx-menu button {
+  display: block; width: 100%;
+  text-align: left;
+  background: transparent; border: none; border-radius: 0;
+  padding: 6px 14px;
+  color: var(--fg);
+}
+#ctx-menu button:hover { background: var(--sel); }

@@ -35,6 +35,7 @@ export class GraphRenderer {
     private canvas: HTMLCanvasElement,
     private viewport: HTMLElement,
     private onSelect: (row: Row) => void,
+    private onContextMenu?: (row: Row, clientX: number, clientY: number) => void,
   ) {
     this.ctx = canvas.getContext("2d")!;
     new ResizeObserver(() => this.resize()).observe(viewport);
@@ -42,6 +43,7 @@ export class GraphRenderer {
     canvas.addEventListener("pointerdown", (e) => this.onPointerDown(e));
     canvas.addEventListener("pointermove", (e) => this.onPointerMove(e));
     canvas.addEventListener("pointerup", (e) => this.onPointerUp(e));
+    canvas.addEventListener("contextmenu", (e) => this.onContextMenuEvent(e));
     viewport.addEventListener("keydown", (e) => this.onKey(e));
     this.resize();
   }
@@ -122,12 +124,27 @@ export class GraphRenderer {
       case "PageUp": target = this.selected - page; break;
       case "Home": target = 0; break;
       case "End": target = rows - 1; break;
+      case "c":
+        if (this.selected >= 0) void navigator.clipboard.writeText(this.view.rows[this.selected].shortSha);
+        return;
+      case "C":
+        if (this.selected >= 0) void navigator.clipboard.writeText(this.view.rows[this.selected].sha);
+        return;
       default: return;
     }
     e.preventDefault();
     // Arrow keys move the selected commit (Git Extensions style); the wheel and scrollbars
     // still free-scroll without changing the selection.
     this.select(Math.max(0, Math.min(rows - 1, target)));
+  }
+  private onContextMenuEvent(e: MouseEvent): void {
+    e.preventDefault();
+    const i = Math.floor((e.offsetY + this.scrollTop) / ROW_H);
+    if (i >= 0 && i < this.view.rows.length) {
+      this.select(i);
+      this.viewport.focus({ preventScroll: true });
+      this.onContextMenu?.(this.view.rows[i], e.clientX, e.clientY);
+    }
   }
   private scrollBy(dx: number, dy: number): void {
     const ny = Math.max(0, Math.min(this.maxScroll(), this.scrollTop + dy));

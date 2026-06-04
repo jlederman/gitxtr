@@ -1,10 +1,11 @@
 import "./style.css";
-import { request } from "./bridge";
+import { request, onPush } from "./bridge";
 import { GraphRenderer } from "./graphRenderer";
 import { showCommit, initDiffToolbar, initFileNav } from "./detail";
 import { initSettings, applyAppearance, type Settings } from "./settings";
 import { initSplitter } from "./splitter";
 import { initRepos, getCurrentRepo } from "./repos";
+import { initContextMenu, showContextMenu } from "./contextMenu";
 import type { GraphView, Row } from "./types";
 
 // getSettings also returns a resolved currentRepo (CLI arg ▸ lastRepo ▸ first repo) — transient.
@@ -14,10 +15,15 @@ const canvas = document.getElementById("graph") as HTMLCanvasElement;
 const viewport = document.getElementById("viewport") as HTMLElement;
 const statusEl = document.getElementById("status") as HTMLElement;
 
-const renderer = new GraphRenderer(canvas, viewport, (row: Row) => {
-  statusEl.textContent = `${row.shortSha} — ${row.summary}`;
-  void showCommit(row.sha);
-});
+const renderer = new GraphRenderer(
+  canvas,
+  viewport,
+  (row: Row) => {
+    statusEl.textContent = `${row.shortSha} — ${row.summary}`;
+    void showCommit(row.sha);
+  },
+  (row, x, y) => showContextMenu(row, x, y),
+);
 
 const DEFAULT_SETTINGS: BootSettings = {
   theme: "mocha", fontFamily: "ui-monospace, monospace", fontSize: 13,
@@ -89,6 +95,35 @@ async function boot(): Promise<void> {
 
   initDiffToolbar(settings.diffView, (m) => void request("saveSettings", { settings: { diffView: m } }));
   initFileNav();
+
+  initContextMenu((action, row) => {
+    if (action === "copy-sha")      void navigator.clipboard.writeText(row.shortSha);
+    else if (action === "copy-full-sha") void navigator.clipboard.writeText(row.sha);
+    else if (action === "copy-message")  void navigator.clipboard.writeText(row.summary);
+  });
+
+  // Auto-refresh: backend pushes repoChanged when .git changes on disk.
+  onPush("repoChanged", (payload) => {
+    if (payload.repoPath === getCurrentRepo()) void loadGraph(payload.repoPath as string);
+  });
+
+  // Manual refresh: F5 or Cmd/Ctrl+R.
+  // Shortcuts panel toggle: ? key or the ? button.
+  const shortcutsEl = document.getElementById("shortcuts") as HTMLElement;
+  const toggleShortcuts = () => { shortcutsEl.hidden = !shortcutsEl.hidden; };
+  document.getElementById("open-shortcuts")!.addEventListener("click", toggleShortcuts);
+  document.getElementById("shortcuts-close")!.addEventListener("click", () => { shortcutsEl.hidden = true; });
+  shortcutsEl.addEventListener("pointerdown", (e) => { if (e.target === shortcutsEl) shortcutsEl.hidden = true; });
+
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "F5" || ((e.metaKey || e.ctrlKey) && e.key === "r")) {
+      e.preventDefault();
+      const repo = getCurrentRepo();
+      if (repo) void loadGraph(repo);
+    }
+    if (e.key === "?" && !e.metaKey && !e.ctrlKey) toggleShortcuts();
+    if (e.key === "Escape") shortcutsEl.hidden = true;
+  });
 
   if (settings.currentRepo) await loadGraph(settings.currentRepo);
   else showEmpty();

@@ -11,6 +11,7 @@
       <select id="repo-select" title="Switch repository"></select>
       <button id="add-repo" title="Add a repository">+ Repo</button>
       <span id="status"></span>
+      <button id="open-shortcuts" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">?</button>
       <button id="open-settings" title="Settings" aria-label="Settings">⚙</button>
     </div>
     <div id="viewport" tabindex="0"><canvas id="graph"></canvas></div>
@@ -73,6 +74,48 @@
           </section>
         </div>
       </div>
+    </div>
+
+    <div id="shortcuts" hidden>
+      <div id="shortcuts-card">
+        <div id="shortcuts-bar">
+          <span class="title">Keyboard Shortcuts</span>
+          <button id="shortcuts-close">Done</button>
+        </div>
+        <div id="shortcuts-body">
+        <section>
+          <h3>Commit Graph</h3>
+          <table>
+            <tr><td>↑ / ↓</td><td>Navigate commits</td></tr>
+            <tr><td>Page Up / Page Down</td><td>Jump by page</td></tr>
+            <tr><td>Home / End</td><td>First / last commit</td></tr>
+            <tr><td>c</td><td>Copy short SHA to clipboard</td></tr>
+            <tr><td>C</td><td>Copy full SHA to clipboard</td></tr>
+            <tr><td>Right-click</td><td>Context menu (copy, …)</td></tr>
+          </table>
+        </section>
+        <section>
+          <h3>Changed Files</h3>
+          <table>
+            <tr><td>↑ / ↓</td><td>Navigate files, scroll diff</td></tr>
+          </table>
+        </section>
+        <section>
+          <h3>General</h3>
+          <table>
+            <tr><td>F5 / ⌘R</td><td>Refresh graph</td></tr>
+            <tr><td>?</td><td>Toggle this panel</td></tr>
+            <tr><td>Esc</td><td>Close panel / dismiss menu</td></tr>
+          </table>
+        </section>
+        </div>
+      </div>
+    </div>
+
+    <div id="ctx-menu" hidden>
+      <button data-action="copy-sha">Copy short SHA</button>
+      <button data-action="copy-full-sha">Copy full SHA</button>
+      <button data-action="copy-message">Copy message</button>
     </div>
 
     <script type="module" src="/src/main.ts"></script>
