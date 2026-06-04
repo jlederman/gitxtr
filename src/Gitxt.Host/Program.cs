@@ -8,7 +8,12 @@ using Gitxt.Infrastructure;
 using Microsoft.Extensions.Logging;
 using Photino.NET;
 
-using var loggerFactory = LoggerFactory.Create(b => b.AddConsole().SetMinimumLevel(LogLevel.Debug));
+// Route all our log output to stderr so it survives the stdout suppression below.
+// Gitxt.* logs at Debug; everything else (framework, Photino internals) at Warning.
+using var loggerFactory = LoggerFactory.Create(b => b
+    .AddFilter("Gitxt", LogLevel.Debug)
+    .AddFilter(string.Empty, LogLevel.Warning)
+    .AddConsole(o => o.LogToStandardErrorThreshold = LogLevel.Trace));
 
 var reader        = new LibGit2SharpRepositoryReader();
 var service       = new GraphQueryService(reader, new GraphLayoutEngine());
@@ -22,6 +27,10 @@ if (args is ["--dump", var dumpPath, ..])
     DumpAscii(service.GetGraph(dumpPath, dumpLimit));
     return 0;
 }
+
+// Photino echoes every SendWebMessage to stdout. Our logs use stderr, so stdout can be
+// suppressed without losing them. The dump path above needs stdout and already returned.
+Console.SetOut(TextWriter.Null);
 
 // ── GUI mode ────────────────────────────────────────────────────────────────
 // Pitfall #1: WebKitGTK's DMA-BUF / accelerated compositing renderer often shows a blank
