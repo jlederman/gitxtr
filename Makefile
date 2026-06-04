@@ -3,7 +3,7 @@
 #   terminal 2:  make app REPO=/path/to/repo
 # Requires Node/npm (nvm) and the .NET 10 SDK on PATH.
 
-APP  := src/Gitxt.App
+APP  := src/Gitxt.Host
 REPO ?=
 
 .PHONY: help web app run build test install clean

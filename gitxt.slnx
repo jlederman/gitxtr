@@ -1,6 +1,6 @@
 <Solution>
   <Folder Name="/src/">
-    <Project Path="src/Gitxt.App/Gitxt.App.csproj" />
+    <Project Path="src/Gitxt.Host/Gitxt.Host.csproj" />
     <Project Path="src/Gitxt.Application/Gitxt.Application.csproj" />
     <Project Path="src/Gitxt.Domain/Gitxt.Domain.csproj" />
     <Project Path="src/Gitxt.Infrastructure/Gitxt.Infrastructure.csproj" />

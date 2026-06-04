@@ -12,7 +12,7 @@ export default defineConfig(({ command }) => ({
   plugins: [viteSingleFile()],
   server: { port: 5173, strictPort: true },
   build: {
-    outDir: "../src/Gitxt.App/obj/webdist",
+    outDir: "../src/Gitxt.Host/obj/webdist",
     emptyOutDir: true,
     target: "es2022",
   },
