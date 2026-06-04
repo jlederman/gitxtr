@@ -126,7 +126,7 @@ function renderUnified(d: CommitDetails): string {
     out.push(`<div class="${cls}"${attr}>${esc(line) || "&nbsp;"}</div>`);
   }
   if (d.diffTruncated) out.push(`<div class="trunc">… diff truncated (large commit)</div>`);
-  return out.join("");
+  return `<div class="diff-wrap">${out.join("")}</div>`;
 }
 
 // Side-by-side view: within each hunk, pair runs of removed/added lines (old left, new right);

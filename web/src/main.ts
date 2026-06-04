@@ -44,7 +44,10 @@ async function boot(): Promise<void> {
   }
   applyAppearance(settings, renderer);
   initSettings({ renderer, settings, getRepoPath: getCurrentRepo });
-  applyDetailHeight(settings.detailHeight);
+  // Clamp persisted sizes to the current window so a value saved at a larger window
+  // size never collapses the graph pane or the diff pane to zero on boot.
+  const maxDetail = window.innerHeight - 140;
+  applyDetailHeight(Math.max(90, Math.min(maxDetail, settings.detailHeight)));
   applyDetailTopHeight(settings.detailTopHeight);
   applyDetailMetaHeight(settings.detailMetaHeight);
 

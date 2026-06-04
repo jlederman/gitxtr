@@ -171,6 +171,7 @@ canvas { position: absolute; inset: 0; display: block; }
 #detail-files .fnums { flex: 0 0 auto; }
 #detail-files .adds { color: var(--add-fg); }
 #detail-files .dels { color: var(--del-fg); }
+.diff-wrap { min-width: max-content; }
 #detail-diff .line { padding: 0 12px; }
 #detail-diff .add { background: var(--add-bg); color: var(--add-fg); }
 #detail-diff .del { background: var(--del-bg); color: var(--del-fg); }
