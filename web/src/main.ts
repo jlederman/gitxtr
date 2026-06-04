@@ -2,6 +2,7 @@ import "./style.css";
 import { request, onPush } from "./bridge";
 import { GraphRenderer } from "./graphRenderer";
 import { showCommit, showWorkingTree, initDiffToolbar, initFileNav, initDetailContextMenus } from "./detail";
+import { initCommitModal, openCommitModal } from "./commitModal";
 import { initSettings, applyAppearance, type Settings } from "./settings";
 import { initSplitter } from "./splitter";
 import { initRepos, getCurrentRepo } from "./repos";
@@ -110,6 +111,7 @@ async function boot(): Promise<void> {
 
   initDiffToolbar(settings.diffView, (m) => void request("saveSettings", { settings: { diffView: m } }));
   initFileNav();
+  initCommitModal();
 
   initContextMenu((action, payload) => {
     const p = payload as Record<string, unknown>;
@@ -162,6 +164,11 @@ async function boot(): Promise<void> {
       searchEl.select();
     }
     if (e.key === "?" && !e.metaKey && !e.ctrlKey) toggleShortcuts();
+    if (e.ctrlKey && e.code === "Space") {
+      e.preventDefault();
+      const repo = getCurrentRepo();
+      if (repo) void openCommitModal(repo);
+    }
     if (e.key === "Escape") shortcutsEl.hidden = true;
   });
 

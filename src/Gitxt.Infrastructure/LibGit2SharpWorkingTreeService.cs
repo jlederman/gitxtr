@@ -60,7 +60,8 @@ public sealed class LibGit2SharpWorkingTreeService : IWorkingTreeService
             }
         }
 
-        return new WorkingTreeViewDto(staged, unstaged);
+        string lastMsg = repo.Head.Tip?.Message.TrimEnd() ?? "";
+        return new WorkingTreeViewDto(staged, unstaged, lastMsg);
     }
 
     public void StageFile(string repoPath, string filePath)
@@ -116,6 +117,16 @@ public sealed class LibGit2SharpWorkingTreeService : IWorkingTreeService
             .Select(e => e.FilePath)
             .ToList();
         if (paths.Count > 0) Commands.Unstage(repo, paths);
+    }
+
+    public void CreateCommit(string repoPath, string message, bool amend)
+    {
+        using var repo = new Repository(repoPath);
+        var name  = repo.Config.GetValueOrDefault<string>("user.name")
+                    ?? throw new InvalidOperationException("Git user.name is not configured. Set it with: git config --global user.name \"Your Name\"");
+        var email = repo.Config.GetValueOrDefault<string>("user.email") ?? "";
+        var sig   = new Signature(name, email, DateTimeOffset.Now);
+        repo.Commit(message, sig, sig, new CommitOptions { AmendPreviousCommit = amend });
     }
 
     private static string StatusChar(ChangeKind kind) => kind switch

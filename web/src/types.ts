@@ -39,4 +39,5 @@ export interface WorkingTreeFile {
 export interface WorkingTreeView {
   staged: WorkingTreeFile[];
   unstaged: WorkingTreeFile[];
+  lastCommitMessage: string;
 }

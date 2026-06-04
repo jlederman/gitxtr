@@ -3,7 +3,8 @@ namespace Gitxt.Application;
 public sealed record WorkingTreeFileDto(string Path, string Status, bool Staged, string Patch);
 public sealed record WorkingTreeViewDto(
     IReadOnlyList<WorkingTreeFileDto> Staged,
-    IReadOnlyList<WorkingTreeFileDto> Unstaged);
+    IReadOnlyList<WorkingTreeFileDto> Unstaged,
+    string LastCommitMessage);
 
 public interface IWorkingTreeService
 {
@@ -14,4 +15,5 @@ public interface IWorkingTreeService
     void DiscardFile(string repoPath, string filePath);
     void StageAll(string repoPath);
     void UnstageAll(string repoPath);
+    void CreateCommit(string repoPath, string message, bool amend);
 }

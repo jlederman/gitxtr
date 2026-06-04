@@ -118,9 +118,10 @@ function renderWipMeta(view: WorkingTreeView): void {
   const s = view.staged.length;
   const u = view.unstaged.length;
   metaEl().innerHTML =
-    `<div class="subject">Working tree changes</div>` +
-    (s > 0 ? `<div><span class="sha">${s} staged</span></div>` : "") +
-    (u > 0 ? `<div><span class="when">${u} unstaged</span></div>` : "");
+    `<div class="subject">Working tree</div>` +
+    (s > 0 ? `<div><span class="sha">● ${s} staged</span></div>` : `<div style="color:var(--muted)">nothing staged</div>`) +
+    (u > 0 ? `<div><span class="when">○ ${u} unstaged</span></div>` : "") +
+    `<div style="margin-top:8px;font-size:11px;color:var(--muted)">Ctrl+Space to open commit dialog</div>`;
 }
 
 function renderWipFiles(view: WorkingTreeView): void {
@@ -252,7 +253,7 @@ function renderDiff(d: CommitDetails): void {
   bodyEl().scrollTop = 0;
 }
 
-function renderUnified(diff: string, truncated = false): string {
+export function renderUnified(diff: string, truncated = false): string {
   const lines = diff.length ? diff.split("\n") : [];
   const out: string[] = [];
   let sec = -1;

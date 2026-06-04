@@ -24,7 +24,7 @@
         <div id="detail-files" tabindex="0"></div>
       </div>
       <div id="dsplit" title="Drag to resize"></div>
-      <div id="detail-diff">
+      <div id="detail-diff" class="diff-pane">
         <div id="diff-toolbar">
           <div class="seg">
             <button data-mode="unified" class="active">Unified</button>
@@ -107,9 +107,33 @@
             <tr><td>/</td><td>Focus commit filter</td></tr>
             <tr><td>F5 / ⌘R</td><td>Refresh graph</td></tr>
             <tr><td>?</td><td>Toggle this panel</td></tr>
-            <tr><td>Esc</td><td>Close panel / dismiss menu</td></tr>
+            <tr><td>Ctrl+Space</td><td>Open commit dialog</td></tr>
+          <tr><td>Esc</td><td>Close panel / dismiss menu</td></tr>
           </table>
         </section>
+        </div>
+      </div>
+    </div>
+
+    <div id="commit-modal" hidden>
+      <div id="commit-card">
+        <div id="commit-hdr">
+          <span class="title">Commit</span>
+          <button id="commit-modal-close" title="Close (Esc)">×</button>
+        </div>
+        <div id="commit-workspace">
+          <div id="commit-files-pane" tabindex="0"></div>
+          <div id="commit-diff-pane" class="diff-pane"></div>
+        </div>
+        <div id="commit-footer">
+          <textarea id="commit-msg-input" placeholder="Commit message" spellcheck="false"></textarea>
+          <div id="commit-footer-row">
+            <label id="commit-amend-label">
+              <input type="checkbox" id="commit-amend-chk"> Amend last commit
+            </label>
+            <span id="commit-msg-err"></span>
+            <button id="do-commit-btn" disabled>Commit</button>
+          </div>
         </div>
       </div>
     </div>
