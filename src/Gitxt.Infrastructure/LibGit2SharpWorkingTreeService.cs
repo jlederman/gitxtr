@@ -63,6 +63,61 @@ public sealed class LibGit2SharpWorkingTreeService : IWorkingTreeService
         return new WorkingTreeViewDto(staged, unstaged);
     }
 
+    public void StageFile(string repoPath, string filePath)
+    {
+        using var repo = new Repository(repoPath);
+        Commands.Stage(repo, filePath);
+    }
+
+    public void UnstageFile(string repoPath, string filePath)
+    {
+        using var repo = new Repository(repoPath);
+        Commands.Unstage(repo, filePath);
+    }
+
+    public void DiscardFile(string repoPath, string filePath)
+    {
+        using var repo = new Repository(repoPath);
+        bool inHead = repo.Head.Tip?.Tree[filePath] is not null;
+        if (inHead)
+        {
+            repo.CheckoutPaths("HEAD", new[] { filePath },
+                new CheckoutOptions { CheckoutModifiers = CheckoutModifiers.Force });
+        }
+        else
+        {
+            // Untracked / new file — delete from disk and remove from index if staged.
+            var fullPath = Path.Combine(repoPath, filePath.Replace('/', Path.DirectorySeparatorChar));
+            if (File.Exists(fullPath)) File.Delete(fullPath);
+            if (repo.Index[filePath] is not null)
+            {
+                repo.Index.Remove(filePath);
+                repo.Index.Write();
+            }
+        }
+    }
+
+    public void StageAll(string repoPath)
+    {
+        using var repo = new Repository(repoPath);
+        var paths = repo.RetrieveStatus(new StatusOptions { IncludeUntracked = true })
+            .Where(e => (e.State & (FileStatus.ModifiedInWorkdir | FileStatus.DeletedFromWorkdir | FileStatus.NewInWorkdir)) != 0)
+            .Select(e => e.FilePath)
+            .ToList();
+        if (paths.Count > 0) Commands.Stage(repo, paths);
+    }
+
+    public void UnstageAll(string repoPath)
+    {
+        using var repo = new Repository(repoPath);
+        var paths = repo.RetrieveStatus()
+            .Where(e => (e.State & (FileStatus.NewInIndex | FileStatus.ModifiedInIndex |
+                                    FileStatus.DeletedFromIndex | FileStatus.RenamedInIndex)) != 0)
+            .Select(e => e.FilePath)
+            .ToList();
+        if (paths.Count > 0) Commands.Unstage(repo, paths);
+    }
+
     private static string StatusChar(ChangeKind kind) => kind switch
     {
         ChangeKind.Added   => "A",

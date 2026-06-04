@@ -72,6 +72,7 @@ var dispatcher = new MessageDispatcher(
     {
         ["loadGraph"]        = new LoadGraphHandler(service, fallbackRepo, watcher, workingTree),
         ["getWorkingTree"]   = new GetWorkingTreeHandler(workingTree, fallbackRepo),
+        ["workingTreeOp"]    = new WorkingTreeOpHandler(workingTree, fallbackRepo),
         ["getCommitDetails"] = new GetCommitDetailsHandler(service, fallbackRepo),
         ["getSettings"]      = new GetSettingsHandler(settingsStore, reader, cliRepo),
         ["saveSettings"]     = new SaveSettingsHandler(settingsStore),

@@ -166,7 +166,7 @@ canvas { position: absolute; inset: 0; display: block; }
   font-size: var(--font-size);
   padding: 4px 0;
 }
-#detail-files .fhead { padding: 2px 12px 4px; color: var(--muted); }
+#detail-files .fhead { padding: 2px 12px 4px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
 #detail-files .fitem { display: flex; align-items: center; gap: 8px; padding: 2px 12px; cursor: pointer; white-space: nowrap; }
 #detail-files .fitem:hover { background: var(--surface2); }
 #detail-files .fitem.sel { background: var(--sel); }
@@ -180,6 +180,22 @@ canvas { position: absolute; inset: 0; display: block; }
 #detail-files .fnums { flex: 0 0 auto; }
 #detail-files .adds { color: var(--add-fg); }
 #detail-files .dels { color: var(--del-fg); }
+#detail-files .fops { flex: 0 0 auto; display: flex; gap: 2px; visibility: hidden; }
+#detail-files .fitem:hover .fops,
+#detail-files .fitem.sel .fops { visibility: visible; }
+#detail-files .fop {
+  padding: 0 5px; line-height: 17px;
+  background: transparent; border: 1px solid var(--border); border-radius: 3px;
+  color: var(--fg); font-size: 12px; cursor: pointer;
+}
+#detail-files .fop:hover { background: var(--surface2); }
+#detail-files .fop.discard:hover { color: var(--del-fg); border-color: var(--del-fg); }
+#detail-files .fop-all {
+  margin-left: auto; padding: 0 6px; line-height: 17px;
+  background: transparent; border: 1px solid var(--border); border-radius: 3px;
+  color: var(--muted); font-size: 11px; cursor: pointer;
+}
+#detail-files .fop-all:hover { background: var(--surface2); color: var(--fg); }
 .diff-wrap { min-width: max-content; }
 #detail-diff .line { padding: 0 12px; }
 #detail-diff .add { background: var(--add-bg); color: var(--add-fg); }

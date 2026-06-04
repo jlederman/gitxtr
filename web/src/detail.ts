@@ -131,11 +131,13 @@ function renderWipFiles(view: WorkingTreeView): void {
 
   let html = "";
   if (view.staged.length > 0) {
-    html += `<div class="fhead">Staged changes</div>`;
+    html += `<div class="fhead">Staged changes` +
+      `<button class="fop-all" data-op="unstageAll" title="Unstage all">Unstage all</button></div>`;
     html += view.staged.map((f, i) => wipFileItem(f, i)).join("");
   }
   if (view.unstaged.length > 0) {
-    html += `<div class="fhead">Unstaged changes</div>`;
+    html += `<div class="fhead">Unstaged changes` +
+      `<button class="fop-all" data-op="stageAll" title="Stage all">Stage all</button></div>`;
     const off = view.staged.length;
     html += view.unstaged.map((f, i) => wipFileItem(f, off + i)).join("");
   }
@@ -145,23 +147,48 @@ function renderWipFiles(view: WorkingTreeView): void {
 
   const el = filesEl();
   el.innerHTML = html;
-  el.querySelectorAll<HTMLElement>(".fitem[data-idx]").forEach((item) => {
-    item.addEventListener("click", () => {
+
+  // Delegated handler: covers both action buttons and file selection.
+  // Assigning to onclick replaces the previous handler on each render (no stacking).
+  el.onclick = (e) => {
+    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>("button[data-op]");
+    if (btn) {
+      e.stopPropagation();
+      void handleWipOp(btn.dataset.op!, btn.dataset.path ?? "");
+      return;
+    }
+    const item = (e.target as HTMLElement).closest<HTMLElement>(".fitem[data-idx]");
+    if (item) {
       selectFile(parseInt(item.dataset.idx!));
       el.focus({ preventScroll: true });
-    });
-  });
+    }
+  };
+}
+
+async function handleWipOp(op: string, filePath: string): Promise<void> {
+  if (op === "discard" && !confirm(`Discard all changes to ${filePath}?`)) return;
+  const repo = getCurrentRepo();
+  if (!repo) return;
+  try {
+    await request<null>("workingTreeOp", { repoPath: repo, op, path: filePath });
+    void showWorkingTree(repo);
+  } catch (e) {
+    console.warn("Working tree op failed:", op, filePath, e);
+  }
 }
 
 function wipFileItem(f: WorkingTreeFile, idx: number): string {
   const cls = f.status === "A" ? "st-add" : f.status === "D" || f.status === "?" ? "st-del" : "st-mod";
-  const indicator = f.staged
-    ? `<span class="fnums adds" title="staged">●</span>`
-    : `<span class="fnums dels" title="unstaged">○</span>`;
+  const ops = f.staged
+    ? `<span class="fops"><button class="fop" data-op="unstage" data-path="${esc(f.path)}" title="Unstage">−</button></span>`
+    : `<span class="fops">` +
+      `<button class="fop" data-op="stage"   data-path="${esc(f.path)}" title="Stage">+</button>` +
+      `<button class="fop discard" data-op="discard" data-path="${esc(f.path)}" title="Discard">×</button>` +
+      `</span>`;
   return `<div class="fitem" data-idx="${idx}" title="${esc(f.path)}">` +
     `<span class="fstat ${cls}">${esc(f.status)}</span>` +
     `<span class="fpath">${esc(f.path)}</span>` +
-    indicator +
+    ops +
     `</div>`;
 }
 
@@ -207,13 +234,16 @@ function renderFiles(d: CommitDetails): void {
         `</div>`;
     }).join("");
 
-  filesEl().querySelectorAll<HTMLElement>(".fitem[data-idx]").forEach((el) => {
-    el.addEventListener("click", () => {
-      selectFile(Number(el.dataset.idx));
-      activateFile(Number(el.dataset.idx));
-      filesEl().focus({ preventScroll: true });
-    });
-  });
+  const el = filesEl();
+  el.onclick = (e) => {
+    const item = (e.target as HTMLElement).closest<HTMLElement>(".fitem[data-idx]");
+    if (item) {
+      const idx = Number(item.dataset.idx);
+      selectFile(idx);
+      activateFile(idx);
+      el.focus({ preventScroll: true });
+    }
+  };
 }
 
 function renderDiff(d: CommitDetails): void {

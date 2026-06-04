@@ -9,4 +9,9 @@ public interface IWorkingTreeService
 {
     bool HasChanges(string repoPath);
     WorkingTreeViewDto GetView(string repoPath);
+    void StageFile(string repoPath, string filePath);
+    void UnstageFile(string repoPath, string filePath);
+    void DiscardFile(string repoPath, string filePath);
+    void StageAll(string repoPath);
+    void UnstageAll(string repoPath);
 }
