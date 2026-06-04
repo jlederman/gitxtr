@@ -1,21 +1,24 @@
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 using Photino.NET;
 
 namespace Gitxt.Host.Messaging;
 
 internal sealed class MessageDispatcher(
     IReadOnlyDictionary<string, IMessageHandler> handlers,
-    JsonSerializerOptions jsonOpts)
+    JsonSerializerOptions jsonOpts,
+    ILogger<MessageDispatcher> logger)
 {
     public string Dispatch(PhotinoWindow window, string raw)
     {
         string id = "";
+        string type = "";
         try
         {
             using var doc = JsonDocument.Parse(raw);
             var root = doc.RootElement;
-            id = root.GetProperty("id").GetString() ?? "";
-            string type = root.GetProperty("type").GetString() ?? "";
+            id   = root.GetProperty("id").GetString() ?? "";
+            type = root.GetProperty("type").GetString() ?? "";
 
             if (!handlers.TryGetValue(type, out var handler))
                 return Err(id, $"unknown request type '{type}'");
@@ -27,6 +30,7 @@ internal sealed class MessageDispatcher(
         }
         catch (Exception ex)
         {
+            logger.LogWarning(ex, "Handler for '{Type}' (id={Id}) threw", type, id);
             return Err(id, ex.Message);
         }
     }

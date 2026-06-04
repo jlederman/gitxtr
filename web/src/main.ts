@@ -53,7 +53,8 @@ async function boot(): Promise<void> {
   let settings: BootSettings;
   try {
     settings = await request<BootSettings>("getSettings");
-  } catch {
+  } catch (e) {
+    console.warn("Failed to load settings from host — using defaults:", e);
     settings = DEFAULT_SETTINGS;
   }
   applyAppearance(settings, renderer);

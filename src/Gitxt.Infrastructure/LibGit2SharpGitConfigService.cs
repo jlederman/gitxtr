@@ -1,12 +1,13 @@
 using Gitxt.Application;
 using LibGit2Sharp;
+using Microsoft.Extensions.Logging;
 
 namespace Gitxt.Infrastructure;
 
 /// <summary>Reads/writes user.name and user.email via libgit2's configuration. When a repo path
 /// is supplied, <c>repo.Config</c> exposes both Global and Local levels; otherwise a standalone
 /// configuration is built that still discovers the global (~/.gitconfig) file.</summary>
-public sealed class LibGit2SharpGitConfigService : IGitConfigService
+public sealed class LibGit2SharpGitConfigService(ILogger<LibGit2SharpGitConfigService> logger) : IGitConfigService
 {
     public GitIdentity Get(string? repoPath)
     {
@@ -50,18 +51,21 @@ public sealed class LibGit2SharpGitConfigService : IGitConfigService
 
     // An empty value unsets the key (rather than writing an empty string), so clearing a field
     // in the UI removes the override instead of silently doing nothing.
-    private static void Apply(Configuration cfg, ConfigurationLevel level, string name, string email)
+    private void Apply(Configuration cfg, ConfigurationLevel level, string name, string email)
     {
         SetOrUnset(cfg, "user.name", name, level);
         SetOrUnset(cfg, "user.email", email, level);
     }
 
-    private static void SetOrUnset(Configuration cfg, string key, string value, ConfigurationLevel level)
+    private void SetOrUnset(Configuration cfg, string key, string value, ConfigurationLevel level)
     {
         if (string.IsNullOrWhiteSpace(value))
         {
             try { cfg.Unset(key, level); }
-            catch (LibGit2SharpException) { /* nothing set at this level — nothing to clear */ }
+            catch (LibGit2SharpException ex)
+            {
+                logger.LogDebug(ex, "Unset {Key} at {Level} was a no-op (key not present)", key, level);
+            }
         }
         else
         {

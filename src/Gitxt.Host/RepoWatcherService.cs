@@ -1,17 +1,18 @@
 using System.Text;
+using Microsoft.Extensions.Logging;
 
 namespace Gitxt.Host;
 
 /// <summary>
 /// Keeps the graph in sync with disk via two complementary mechanisms:
-///   1. FileSystemWatcher on .git/ — fires fast (~500 ms) when FSEvents cooperates.
+///   1. FileSystemWatcher on .git/ — fires fast (~300 ms) when FSEvents cooperates.
 ///   2. Polling every 2 s — reads a lightweight "state signature" from a handful of
 ///      .git files (no Repository open) and fires if anything changed. Catches the
 ///      cases where macOS FSEvents coalesces or drops events during atomic git writes.
 /// All callbacks arrive on thread-pool threads; Interlocked.Exchange makes the debounce
 /// race-free across concurrent events from both sources.
 /// </summary>
-internal sealed class RepoWatcherService(Action<string> onChanged) : IDisposable
+internal sealed class RepoWatcherService(Action<string> onChanged, ILogger<RepoWatcherService> logger) : IDisposable
 {
     private FileSystemWatcher? _watcher;
     private Timer? _debounce;
@@ -64,7 +65,7 @@ internal sealed class RepoWatcherService(Action<string> onChanged) : IDisposable
     /// Cheap state fingerprint: reads HEAD, the current branch tip SHA, the stash ref,
     /// and the packed-refs mtime. No Repository handle opened.
     /// </summary>
-    private static string GitState(string gitDir)
+    private string GitState(string gitDir)
     {
         try
         {
@@ -93,7 +94,11 @@ internal sealed class RepoWatcherService(Action<string> onChanged) : IDisposable
 
             return sb.ToString();
         }
-        catch (Exception) { return ""; }
+        catch (Exception ex)
+        {
+            logger.LogDebug(ex, "Failed to read git state from {GitDir}", gitDir);
+            return "";
+        }
     }
 
     private void Debounce(string repoPath)

@@ -5,12 +5,15 @@ using Gitxt.Host;
 using Gitxt.Host.Messaging;
 using Gitxt.Host.Messaging.Handlers;
 using Gitxt.Infrastructure;
+using Microsoft.Extensions.Logging;
 using Photino.NET;
 
-var reader       = new LibGit2SharpRepositoryReader();
-var service      = new GraphQueryService(reader, new GraphLayoutEngine());
-var settingsStore = new JsonSettingsStore();
-var gitConfig    = new LibGit2SharpGitConfigService();
+using var loggerFactory = LoggerFactory.Create(b => b.AddConsole().SetMinimumLevel(LogLevel.Debug));
+
+var reader        = new LibGit2SharpRepositoryReader();
+var service       = new GraphQueryService(reader, new GraphLayoutEngine());
+var settingsStore = new JsonSettingsStore(loggerFactory.CreateLogger<JsonSettingsStore>());
+var gitConfig     = new LibGit2SharpGitConfigService(loggerFactory.CreateLogger<LibGit2SharpGitConfigService>());
 
 // Headless dump mode (dev/verification): gitxt --dump <repoPath> [limit]
 if (args is ["--dump", var dumpPath, ..])
@@ -52,7 +55,7 @@ var watcher = new RepoWatcherService(repoPath =>
     // SendWebMessage must run on the UI thread (WebKit requirement on macOS).
     var msg = JsonSerializer.Serialize(new { type = "repoChanged", repoPath }, jsonOpts);
     w.Invoke(() => w.SendWebMessage(msg));
-});
+}, loggerFactory.CreateLogger<RepoWatcherService>());
 
 var dispatcher = new MessageDispatcher(
     new Dictionary<string, IMessageHandler>
@@ -66,7 +69,8 @@ var dispatcher = new MessageDispatcher(
         ["getGitIdentity"]   = new GetGitIdentityHandler(gitConfig, fallbackRepo),
         ["setGitIdentity"]   = new SetGitIdentityHandler(gitConfig, fallbackRepo),
     },
-    jsonOpts);
+    jsonOpts,
+    loggerFactory.CreateLogger<MessageDispatcher>());
 
 string indexPath = Path.Combine(AppContext.BaseDirectory, "wwwroot", "index.html");
 // Dev hot-reload: GITXT_DEV_URL points at the Vite dev server so web edits live-reload.

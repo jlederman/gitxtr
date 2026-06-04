@@ -19,7 +19,7 @@ let counter = 0;
 if (hasHost) {
   (ext as PhotinoExternal).receiveMessage((raw: string) => {
     let msg: Record<string, unknown>;
-    try { msg = JSON.parse(raw) as Record<string, unknown>; } catch { return; }
+    try { msg = JSON.parse(raw) as Record<string, unknown>; } catch (e) { console.warn("Failed to parse host message:", e, raw); return; }
 
     // Response to a pending request
     if (typeof msg.id === "string") {
