@@ -20,6 +20,7 @@ export interface Row {
   color: number;
   edges: Edge[];
   refs: Ref[];
+  parents: string[];
 }
 
 export interface GraphView {

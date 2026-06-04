@@ -197,12 +197,10 @@ async function boot(): Promise<void> {
           void commitOp(repo, "cherryPick", row.sha);
       } else if (action === "commit:irebase") {
         if (repo) {
-          const clickedIdx = fullView.rows.findIndex(r => r.sha === row.sha);
-          if (clickedIdx >= 0) {
-            const toRebase = fullView.rows
-              .slice(0, clickedIdx + 1)
-              .filter(r => r.sha !== "WIP")
-              .reverse(); // oldest first (git rebase -i convention)
+          const toRebase = firstParentChain(fullView.rows, row.sha);
+          if (!toRebase) {
+            alert(`"${row.summary}" is not on the current branch's linear history and cannot be used as a rebase base.`);
+          } else {
             openRebaseModal(toRebase, repo);
           }
         }
@@ -275,6 +273,22 @@ function makeWipRow(firstReal: Row | undefined): Row {
     edges: firstReal ? [{ from: 0, to: firstReal.column, color: firstReal.color }] : [],
     refs: [{ name: "WIP", kind: "wip" }],
   };
+}
+
+// Walk the first-parent chain from HEAD to targetSha. Returns commits oldest-first
+// (matching git rebase -i convention), or null if targetSha is not on the chain.
+function firstParentChain(rows: Row[], targetSha: string): Row[] | null {
+  const bysha = new Map(rows.map(r => [r.sha, r]));
+  const head = rows.find(r => r.sha !== "WIP");
+  if (!head) return null;
+  const chain: Row[] = [];
+  let cur: Row | undefined = head;
+  while (cur) {
+    chain.push(cur);
+    if (cur.sha === targetSha) return chain.reverse();
+    cur = bysha.get(cur.parents[0] ?? "");
+  }
+  return null;
 }
 
 function textMatchesSha(q: string, row: Row): boolean {

@@ -7,7 +7,8 @@ public sealed record EdgeDto(int From, int To, int Color);
 public sealed record RefDto(string Name, string Kind);
 public sealed record RowDto(
     int Index, string Sha, string ShortSha, string Summary, string Author, string WhenIso,
-    int Column, int Color, IReadOnlyList<EdgeDto> Edges, IReadOnlyList<RefDto> Refs);
+    int Column, int Color, IReadOnlyList<EdgeDto> Edges, IReadOnlyList<RefDto> Refs,
+    IReadOnlyList<string> Parents);
 
 /// <summary><paramref name="Truncated"/> is true when the result hit the requested limit —
 /// surfaced so the UI never silently implies it showed the whole history.</summary>
@@ -44,7 +45,8 @@ public sealed class GraphQueryService(IRepositoryReader reader, GraphLayoutEngin
                 row.Commit.Author, row.Commit.WhenUtc.ToString("o"),
                 row.Column, row.ColorId,
                 row.EdgesBelow.Select(e => new EdgeDto(e.FromColumn, e.ToColumn, e.ColorId)).ToList(),
-                (rs ?? []).Select(r => new RefDto(r.Name, r.Kind.ToString())).ToList());
+                (rs ?? []).Select(r => new RefDto(r.Name, r.Kind.ToString())).ToList(),
+                row.Commit.Parents.Select(p => p.Sha).ToList());
         }).ToList();
 
         bool truncated = limit is int n && commits.Count >= n;
