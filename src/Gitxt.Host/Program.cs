@@ -86,6 +86,7 @@ var dispatcher = new MessageDispatcher(
         ["commitOp"]         = new CommitOpHandler(workingTree, fallbackRepo),
         ["interactiveRebase"] = new InteractiveRebaseHandler(workingTree, fallbackRepo),
         ["branchOp"]         = new BranchOpHandler(branches, fallbackRepo),
+        ["getBranches"]      = new GetBranchesHandler(branches, fallbackRepo),
     },
     jsonOpts,
     loggerFactory.CreateLogger<MessageDispatcher>());

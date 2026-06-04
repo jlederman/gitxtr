@@ -1,0 +1,17 @@
+using Gitxt.Application;
+using Gitxt.Host.Messaging;
+
+namespace Gitxt.Host.Messaging.Handlers;
+
+internal sealed class GetBranchesHandler(IBranchService branches, string fallbackRepo) : IMessageHandler
+{
+    public object? Handle(MessageContext ctx)
+    {
+        string repoPath = ctx.Root.TryGetProperty("repoPath", out var rp) && rp.GetString() is { Length: > 0 } r
+            ? r : fallbackRepo;
+        if (string.IsNullOrEmpty(repoPath))
+            throw new InvalidOperationException("no repository selected");
+
+        return branches.GetBranches(repoPath);
+    }
+}

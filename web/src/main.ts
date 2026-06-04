@@ -13,10 +13,11 @@ import type { GraphView, Row } from "./types";
 // getSettings also returns a resolved currentRepo (CLI arg ▸ lastRepo ▸ first repo) — transient.
 type BootSettings = Settings & { currentRepo: string | null };
 
-const canvas   = document.getElementById("graph") as HTMLCanvasElement;
-const viewport  = document.getElementById("viewport") as HTMLElement;
-const statusEl  = document.getElementById("status") as HTMLElement;
-const searchEl  = document.getElementById("search") as HTMLInputElement;
+const canvas     = document.getElementById("graph") as HTMLCanvasElement;
+const viewport   = document.getElementById("viewport") as HTMLElement;
+const statusEl   = document.getElementById("status") as HTMLElement;
+const searchEl   = document.getElementById("search") as HTMLInputElement;
+const branchSel  = document.getElementById("branch-select") as HTMLSelectElement;
 
 const renderer = new GraphRenderer(
   canvas,
@@ -163,6 +164,13 @@ async function boot(): Promise<void> {
     onSwitch: (repo) => (repo ? void loadGraph(repo) : showEmpty()),
   });
 
+  branchSel.hidden = true;
+  branchSel.addEventListener("change", () => {
+    const name = branchSel.value;
+    const repo = getCurrentRepo();
+    if (repo && name) void branchOp(repo, "checkout", { name });
+  });
+
   initDiffToolbar(settings.diffView, (m) => void request("saveSettings", { settings: { diffView: m } }));
   initFileNav();
   initCommitModal();
@@ -275,6 +283,10 @@ function makeWipRow(firstReal: Row | undefined): Row {
   };
 }
 
+function esc(s: string): string {
+  return s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] as string));
+}
+
 // Walk the first-parent chain from HEAD to targetSha. Returns commits oldest-first
 // (matching git rebase -i convention), or null if targetSha is not on the chain.
 function firstParentChain(rows: Row[], targetSha: string): Row[] | null {
@@ -365,16 +377,37 @@ async function commitOp(repo: string, op: string, sha: string): Promise<void> {
 async function loadGraph(repo: string): Promise<void> {
   statusEl.textContent = "loading…";
   try {
-    fullView = await request<GraphView>("loadGraph", { repoPath: repo });
+    const [graph] = await Promise.all([
+      request<GraphView>("loadGraph", { repoPath: repo }),
+      loadBranches(repo),
+    ]);
+    fullView = graph;
     applyFilter();
   } catch (e) {
     statusEl.textContent = `error: ${e instanceof Error ? e.message : String(e)}`;
   }
 }
 
+async function loadBranches(repo: string): Promise<void> {
+  try {
+    const list = await request<{ name: string; isHead: boolean }[]>("getBranches", { repoPath: repo });
+    const hasCurrent = list.some(b => b.isHead);
+    branchSel.innerHTML =
+      (!hasCurrent ? '<option value="" disabled selected>(detached HEAD)</option>' : "") +
+      list.map(b =>
+        `<option value="${esc(b.name)}"${b.isHead ? " selected" : ""}>${esc(b.name)}</option>`
+      ).join("");
+    branchSel.hidden = false;
+  } catch {
+    branchSel.hidden = true;
+  }
+}
+
 function showEmpty(): void {
   renderer.setView({ rows: [], width: 0, truncated: false });
   statusEl.textContent = 'No repository — click "+ Repo" to add one';
+  branchSel.hidden = true;
+  branchSel.innerHTML = "";
 }
 
 void boot();
