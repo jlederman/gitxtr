@@ -17,6 +17,9 @@ const errSpan   = () => document.getElementById("commit-msg-err") as HTMLElement
 export function initCommitModal(): void {
   document.getElementById("commit-modal-close")!.addEventListener("click", close);
   modalEl().addEventListener("pointerdown", (e) => { if (e.target === modalEl()) close(); });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !modalEl().hidden) { e.stopPropagation(); close(); }
+  }, true);
   msgInput().addEventListener("input", updateBtn);
   amendChk().addEventListener("change", () => {
     if (amendChk().checked && msgInput().value.trim() === "")

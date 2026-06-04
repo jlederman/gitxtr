@@ -73,6 +73,9 @@ export function initSettings(opts: {
 
   $("open-settings").addEventListener("click", () => void open());
   $("settings-close").addEventListener("click", () => { $("settings").hidden = true; });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !$("settings").hidden) { e.stopPropagation(); $("settings").hidden = true; }
+  }, true);
   document.querySelectorAll<HTMLButtonElement>("#settings-cats button").forEach((btn) =>
     btn.addEventListener("click", () => selectCat(btn.dataset.cat!)),
   );
