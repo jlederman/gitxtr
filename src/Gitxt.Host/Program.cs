@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Gitxt.Application;
 using Gitxt.Domain;
+using Gitxt.Host;
 using Gitxt.Host.Messaging;
 using Gitxt.Host.Messaging.Handlers;
 using Gitxt.Infrastructure;
@@ -40,11 +41,23 @@ if (cliRepo is not null)
 }
 string fallbackRepo = cliRepo ?? "";
 
-var jsonOpts   = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+var jsonOpts = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+
+// watcher is created before window; the lambda captures `window` which is assigned below.
+PhotinoWindow? window = null;
+var watcher = new RepoWatcherService(repoPath =>
+{
+    var w = window;
+    if (w is null) return;
+    // SendWebMessage must run on the UI thread (WebKit requirement on macOS).
+    var msg = JsonSerializer.Serialize(new { type = "repoChanged", repoPath }, jsonOpts);
+    w.Invoke(() => w.SendWebMessage(msg));
+});
+
 var dispatcher = new MessageDispatcher(
     new Dictionary<string, IMessageHandler>
     {
-        ["loadGraph"]        = new LoadGraphHandler(service, fallbackRepo),
+        ["loadGraph"]        = new LoadGraphHandler(service, fallbackRepo, watcher),
         ["getCommitDetails"] = new GetCommitDetailsHandler(service, fallbackRepo),
         ["getSettings"]      = new GetSettingsHandler(settingsStore, reader, cliRepo),
         ["saveSettings"]     = new SaveSettingsHandler(settingsStore),
@@ -60,7 +73,7 @@ string indexPath = Path.Combine(AppContext.BaseDirectory, "wwwroot", "index.html
 // Run `npm run dev`, then `GITXT_DEV_URL=http://localhost:5173 dotnet run --project src/Gitxt.Host -- <repo>`.
 string? devUrl = Environment.GetEnvironmentVariable("GITXT_DEV_URL");
 
-var window = new PhotinoWindow()
+window = new PhotinoWindow()
     .SetTitle("gitxt")
     .SetUseOsDefaultSize(false)
     .SetSize(1100, 760)
