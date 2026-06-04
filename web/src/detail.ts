@@ -1,5 +1,6 @@
 import { request } from "./bridge";
 import { getCurrentRepo } from "./repos";
+import { showContextMenu } from "./contextMenu";
 
 interface FileChange { path: string; status: string; added: number; deleted: number; }
 interface Ref { name: string; kind: string; }
@@ -214,4 +215,31 @@ function srow(lno: number | null, ltext: string, lcls: string, rno: number | nul
     `<span class="lno">${lno ?? ""}</span><span class="lc ${lcls}">${esc(ltext) || "&nbsp;"}</span>` +
     `<span class="rno">${rno ?? ""}</span><span class="rc ${rcls}">${esc(rtext) || "&nbsp;"}</span>` +
     `</div>`;
+}
+
+export function initDetailContextMenus(): void {
+  // Files list: right-click a file row → copy path
+  filesEl().addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+    const item = (e.target as HTMLElement).closest<HTMLElement>(".fitem[data-idx]");
+    if (!item) return;
+    showContextMenu(
+      [{ label: "Copy path", action: "copy-path" }],
+      { kind: "file", path: item.title },
+      e.clientX, e.clientY,
+    );
+  });
+
+  // Diff body: right-click a line → copy line text
+  bodyEl().addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+    const line = (e.target as HTMLElement).closest<HTMLElement>(".line");
+    if (!line) return;
+    const text = line.textContent ?? "";
+    showContextMenu(
+      [{ label: "Copy line", action: "copy-line" }],
+      { kind: "diff-line", text },
+      e.clientX, e.clientY,
+    );
+  });
 }

@@ -1,8 +1,7 @@
-import type { Row } from "./types";
+type MenuItem = { label: string; action: string };
+type ActionHandler = (action: string, payload: unknown) => void;
 
-type ActionHandler = (action: string, row: Row) => void;
-
-let activeRow: Row | null = null;
+let activePayload: unknown = null;
 let onAction: ActionHandler = () => {};
 
 const menuEl = () => document.getElementById("ctx-menu") as HTMLElement;
@@ -12,8 +11,8 @@ export function initContextMenu(handler: ActionHandler): void {
 
   menuEl().addEventListener("click", (e) => {
     const btn = (e.target as HTMLElement).closest<HTMLElement>("[data-action]");
-    if (btn?.dataset.action && activeRow) {
-      onAction(btn.dataset.action, activeRow);
+    if (btn?.dataset.action != null) {
+      onAction(btn.dataset.action, activePayload);
       hide();
     }
   });
@@ -27,11 +26,18 @@ export function initContextMenu(handler: ActionHandler): void {
   });
 }
 
-export function showContextMenu(row: Row, clientX: number, clientY: number): void {
-  activeRow = row;
+export function showContextMenu(
+  items: MenuItem[],
+  payload: unknown,
+  clientX: number,
+  clientY: number,
+): void {
+  activePayload = payload;
   const menu = menuEl();
+  menu.innerHTML = items
+    .map((i) => `<button data-action="${i.action}">${i.label}</button>`)
+    .join("");
   menu.hidden = false;
-  // Nudge inside viewport
   const { offsetWidth: w, offsetHeight: h } = menu;
   menu.style.left = `${Math.min(clientX, window.innerWidth  - w - 4)}px`;
   menu.style.top  = `${Math.min(clientY, window.innerHeight - h - 4)}px`;
@@ -39,5 +45,5 @@ export function showContextMenu(row: Row, clientX: number, clientY: number): voi
 
 function hide(): void {
   menuEl().hidden = true;
-  activeRow = null;
+  activePayload = null;
 }

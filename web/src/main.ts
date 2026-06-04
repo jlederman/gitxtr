@@ -1,7 +1,7 @@
 import "./style.css";
 import { request, onPush } from "./bridge";
 import { GraphRenderer } from "./graphRenderer";
-import { showCommit, initDiffToolbar, initFileNav } from "./detail";
+import { showCommit, initDiffToolbar, initFileNav, initDetailContextMenus } from "./detail";
 import { initSettings, applyAppearance, type Settings } from "./settings";
 import { initSplitter } from "./splitter";
 import { initRepos, getCurrentRepo } from "./repos";
@@ -22,7 +22,15 @@ const renderer = new GraphRenderer(
     statusEl.textContent = `${row.shortSha} — ${row.summary}`;
     void showCommit(row.sha);
   },
-  (row, x, y) => showContextMenu(row, x, y),
+  (row, x, y) => showContextMenu(
+    [
+      { label: "Copy short SHA", action: "copy-sha" },
+      { label: "Copy full SHA",  action: "copy-full-sha" },
+      { label: "Copy message",   action: "copy-message" },
+    ],
+    { kind: "commit", row },
+    x, y,
+  ),
 );
 
 const DEFAULT_SETTINGS: BootSettings = {
@@ -96,11 +104,20 @@ async function boot(): Promise<void> {
   initDiffToolbar(settings.diffView, (m) => void request("saveSettings", { settings: { diffView: m } }));
   initFileNav();
 
-  initContextMenu((action, row) => {
-    if (action === "copy-sha")      void navigator.clipboard.writeText(row.shortSha);
-    else if (action === "copy-full-sha") void navigator.clipboard.writeText(row.sha);
-    else if (action === "copy-message")  void navigator.clipboard.writeText(row.summary);
+  initContextMenu((action, payload) => {
+    const p = payload as Record<string, unknown>;
+    if (p.kind === "commit") {
+      const row = p.row as { sha: string; shortSha: string; summary: string };
+      if (action === "copy-sha")       void navigator.clipboard.writeText(row.shortSha);
+      else if (action === "copy-full-sha") void navigator.clipboard.writeText(row.sha);
+      else if (action === "copy-message")  void navigator.clipboard.writeText(row.summary);
+    } else if (p.kind === "file") {
+      if (action === "copy-path") void navigator.clipboard.writeText(p.path as string);
+    } else if (p.kind === "diff-line") {
+      if (action === "copy-line") void navigator.clipboard.writeText(p.text as string);
+    }
   });
+  initDetailContextMenus();
 
   // Auto-refresh: backend pushes repoChanged when .git changes on disk.
   onPush("repoChanged", (payload) => {
