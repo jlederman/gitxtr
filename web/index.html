@@ -10,6 +10,7 @@
       <span id="title">gitxt</span>
       <select id="repo-select" title="Switch repository"></select>
       <button id="add-repo" title="Add a repository">+ Repo</button>
+      <input id="search" type="search" placeholder="Filter commits…" autocomplete="off" spellcheck="false" />
       <span id="status"></span>
       <button id="open-shortcuts" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">?</button>
       <button id="open-settings" title="Settings" aria-label="Settings">⚙</button>
@@ -103,6 +104,7 @@
         <section>
           <h3>General</h3>
           <table>
+            <tr><td>/</td><td>Focus commit filter</td></tr>
             <tr><td>F5 / ⌘R</td><td>Refresh graph</td></tr>
             <tr><td>?</td><td>Toggle this panel</td></tr>
             <tr><td>Esc</td><td>Close panel / dismiss menu</td></tr>

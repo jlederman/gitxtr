@@ -11,9 +11,10 @@ import type { GraphView, Row } from "./types";
 // getSettings also returns a resolved currentRepo (CLI arg ▸ lastRepo ▸ first repo) — transient.
 type BootSettings = Settings & { currentRepo: string | null };
 
-const canvas = document.getElementById("graph") as HTMLCanvasElement;
-const viewport = document.getElementById("viewport") as HTMLElement;
-const statusEl = document.getElementById("status") as HTMLElement;
+const canvas   = document.getElementById("graph") as HTMLCanvasElement;
+const viewport  = document.getElementById("viewport") as HTMLElement;
+const statusEl  = document.getElementById("status") as HTMLElement;
+const searchEl  = document.getElementById("search") as HTMLInputElement;
 
 const renderer = new GraphRenderer(
   canvas,
@@ -133,11 +134,27 @@ async function boot(): Promise<void> {
   document.getElementById("shortcuts-close")!.addEventListener("click", () => { shortcutsEl.hidden = true; });
   shortcutsEl.addEventListener("pointerdown", (e) => { if (e.target === shortcutsEl) shortcutsEl.hidden = true; });
 
+  searchEl.addEventListener("input", applyFilter);
+  searchEl.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      searchEl.value = "";
+      applyFilter();
+      searchEl.blur();
+      renderer.focus();
+      e.stopPropagation();
+    }
+  });
+
   window.addEventListener("keydown", (e) => {
     if (e.key === "F5" || ((e.metaKey || e.ctrlKey) && e.key === "r")) {
       e.preventDefault();
       const repo = getCurrentRepo();
       if (repo) void loadGraph(repo);
+    }
+    if (e.key === "/" && !e.metaKey && !e.ctrlKey && document.activeElement !== searchEl) {
+      e.preventDefault();
+      searchEl.focus();
+      searchEl.select();
     }
     if (e.key === "?" && !e.metaKey && !e.ctrlKey) toggleShortcuts();
     if (e.key === "Escape") shortcutsEl.hidden = true;
@@ -148,12 +165,34 @@ async function boot(): Promise<void> {
   renderer.focus();
 }
 
+let fullView: GraphView = { rows: [], width: 0, truncated: false };
+
+function filterView(view: GraphView, query: string): GraphView {
+  const q = query.trim().toLowerCase();
+  if (!q) return view;
+  const rows = view.rows.filter(r =>
+    r.sha.toLowerCase().startsWith(q) ||
+    r.shortSha.toLowerCase().startsWith(q) ||
+    r.summary.toLowerCase().includes(q) ||
+    r.author.toLowerCase().includes(q) ||
+    r.refs.some(ref => ref.name.toLowerCase().includes(q))
+  );
+  return { rows: rows.map(r => ({ ...r, column: 0, edges: [] })), width: 0, truncated: view.truncated };
+}
+
+function applyFilter(): void {
+  const q = searchEl.value.trim();
+  const view = filterView(fullView, q);
+  renderer.setView(view);
+  if (q) statusEl.textContent = `${view.rows.length} of ${fullView.rows.length} commits match`;
+  else statusEl.textContent = `${fullView.rows.length} commits${fullView.truncated ? " (truncated)" : ""}`;
+}
+
 async function loadGraph(repo: string): Promise<void> {
   statusEl.textContent = "loading…";
   try {
-    const view = await request<GraphView>("loadGraph", { repoPath: repo });
-    renderer.setView(view);
-    statusEl.textContent = `${view.rows.length} commits${view.truncated ? " (truncated)" : ""}`;
+    fullView = await request<GraphView>("loadGraph", { repoPath: repo });
+    applyFilter();
   } catch (e) {
     statusEl.textContent = `error: ${e instanceof Error ? e.message : String(e)}`;
   }
