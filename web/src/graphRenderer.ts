@@ -42,7 +42,7 @@ export class GraphRenderer {
     canvas.addEventListener("pointerdown", (e) => this.onPointerDown(e));
     canvas.addEventListener("pointermove", (e) => this.onPointerMove(e));
     canvas.addEventListener("pointerup", (e) => this.onPointerUp(e));
-    window.addEventListener("keydown", (e) => this.onKey(e));
+    viewport.addEventListener("keydown", (e) => this.onKey(e));
     this.resize();
   }
 
@@ -53,6 +53,10 @@ export class GraphRenderer {
     this.scrollLeft = 0;
     if (view.rows.length > 0) this.select(0);
     else this.draw();
+  }
+
+  focus(): void {
+    this.viewport.focus({ preventScroll: true });
   }
 
   setTheme(theme: Theme): void {
@@ -166,7 +170,10 @@ export class GraphRenderer {
     }
     if (this.pressY !== null && Math.abs(e.offsetY - this.pressY) < 4) {
       const i = Math.floor((e.offsetY + this.scrollTop) / ROW_H);
-      if (i >= 0 && i < this.view.rows.length) this.select(i);
+      if (i >= 0 && i < this.view.rows.length) {
+        this.select(i);
+        this.viewport.focus({ preventScroll: true });
+      }
     }
     this.pressY = null;
   }

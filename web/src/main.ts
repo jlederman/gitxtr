@@ -1,7 +1,7 @@
 import "./style.css";
 import { request } from "./bridge";
 import { GraphRenderer } from "./graphRenderer";
-import { showCommit, initDiffToolbar } from "./detail";
+import { showCommit, initDiffToolbar, initFileNav } from "./detail";
 import { initSettings, applyAppearance, type Settings } from "./settings";
 import { initSplitter } from "./splitter";
 import { initRepos, getCurrentRepo } from "./repos";
@@ -88,9 +88,11 @@ async function boot(): Promise<void> {
   });
 
   initDiffToolbar(settings.diffView, (m) => void request("saveSettings", { settings: { diffView: m } }));
+  initFileNav();
 
   if (settings.currentRepo) await loadGraph(settings.currentRepo);
   else showEmpty();
+  renderer.focus();
 }
 
 async function loadGraph(repo: string): Promise<void> {

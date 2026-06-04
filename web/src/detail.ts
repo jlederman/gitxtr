@@ -16,6 +16,30 @@ const bodyEl = () => document.getElementById("diff-body") as HTMLElement; // dif
 let token = 0;
 let diffMode: "unified" | "split" = "unified";
 let lastDetails: CommitDetails | null = null;
+let selectedFileIdx = -1;
+let totalFiles = 0;
+
+export function initFileNav(): void {
+  const el = filesEl();
+  el.addEventListener("keydown", (e) => {
+    if (totalFiles === 0) return;
+    if (e.key === "ArrowDown") { e.preventDefault(); selectFile(Math.min(totalFiles - 1, selectedFileIdx + 1)); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); selectFile(Math.max(0, selectedFileIdx - 1)); }
+  });
+}
+
+function selectFile(idx: number): void {
+  selectedFileIdx = idx;
+  filesEl().querySelectorAll<HTMLElement>(".fitem[data-idx]").forEach((el) =>
+    el.classList.toggle("sel", Number(el.dataset.idx) === idx),
+  );
+  filesEl().querySelector<HTMLElement>(`.fitem[data-idx="${idx}"]`)?.scrollIntoView({ block: "nearest" });
+  activateFile(idx);
+}
+
+function activateFile(idx: number): void {
+  document.getElementById(`diffsec-${idx}`)?.scrollIntoView({ block: "start", behavior: "smooth" });
+}
 
 function esc(s: string): string {
   return s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c] as string));
@@ -81,6 +105,8 @@ function statusInfo(status: string): { glyph: string; cls: string } {
 // Vertical, clickable file list. Clicking a file scrolls the diff to its section (the diff's
 // `diff --git` headers are tagged with matching ids, in the same order as files[]).
 function renderFiles(d: CommitDetails): void {
+  selectedFileIdx = -1;
+  totalFiles = d.files.length;
   if (d.files.length === 0) {
     filesEl().innerHTML = `<div class="fitem muted">no file changes</div>`;
     return;
@@ -98,9 +124,9 @@ function renderFiles(d: CommitDetails): void {
 
   filesEl().querySelectorAll<HTMLElement>(".fitem[data-idx]").forEach((el) => {
     el.addEventListener("click", () => {
-      document.getElementById(`diffsec-${el.dataset.idx}`)?.scrollIntoView({ block: "start", behavior: "smooth" });
-      filesEl().querySelectorAll(".fitem.sel").forEach((x) => x.classList.remove("sel"));
-      el.classList.add("sel");
+      selectFile(Number(el.dataset.idx));
+      activateFile(Number(el.dataset.idx));
+      filesEl().focus({ preventScroll: true });
     });
   });
 }

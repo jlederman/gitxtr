@@ -63,7 +63,9 @@ button:hover { border-color: var(--accent); }
   top: 35px; left: 0; right: 0;
   bottom: var(--detail-height, 320px);
   overflow: hidden;
+  outline: none;
 }
+#detail-files:focus { outline: none; }
 canvas { position: absolute; inset: 0; display: block; }
 
 #vsplit {
