@@ -50,7 +50,7 @@ function render(): void {
       `<button class="r-dn" data-idx="${i}" title="Move down" ${i === steps.length - 1 ? "disabled" : ""}>▼</button>` +
       `</div>` +
       `<select class="r-action" data-idx="${i}">` +
-      ["pick", "squash", "fixup", "drop"].map(a =>
+      (i === 0 ? ["pick", "drop"] : ["pick", "squash", "fixup", "drop"]).map(a =>
         `<option value="${a}"${s.action === a ? " selected" : ""}>${a}</option>`
       ).join("") +
       `</select>` +
@@ -77,6 +77,8 @@ function render(): void {
 
 function swap(a: number, b: number): void {
   [steps[a], steps[b]] = [steps[b], steps[a]];
+  // squash/fixup can't be the first effective step — clamp to pick if needed.
+  if (steps[0].action === "squash" || steps[0].action === "fixup") steps[0].action = "pick";
 }
 
 async function execute(): Promise<void> {

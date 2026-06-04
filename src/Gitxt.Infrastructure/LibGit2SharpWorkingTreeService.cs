@@ -192,8 +192,9 @@ public sealed class LibGit2SharpWorkingTreeService : IWorkingTreeService
 
     private static void ExecuteSteps(Repository repo, Signature sig, IReadOnlyList<RebaseStep> steps)
     {
-        Commit? groupBase = null;   // parent of the first pick in the current squash group
+        Commit? groupBase = null;   // HEAD before the pick that started the current squash group
         string? groupMsg  = null;
+        bool hasPickedAny = false;
 
         void FlushGroup()
         {
@@ -211,18 +212,22 @@ public sealed class LibGit2SharpWorkingTreeService : IWorkingTreeService
 
             if (step.Action == "drop") continue;
 
-            if (step.Action == "pick")
+            // squash/fixup without a prior pick is invalid — treat as pick (matches git's behaviour).
+            var action = (step.Action is "squash" or "fixup" && !hasPickedAny) ? "pick" : step.Action;
+
+            if (action == "pick")
             {
                 FlushGroup();
                 var result = repo.CherryPick(original, sig);
                 if (result.Status == CherryPickStatus.Conflicts)
                     throw new InvalidOperationException($"Cherry-pick of {step.Sha[..7]} resulted in conflicts.");
+                hasPickedAny = true;
             }
             else // squash or fixup
             {
                 if (groupBase is null)
                 {
-                    // Start a squash group anchored at the parent of the current HEAD.
+                    // Anchor the group at the parent of the most-recent pick.
                     groupBase = repo.Head.Tip.Parents.First();
                     groupMsg  = repo.Head.Tip.Message.TrimEnd();
                 }
@@ -233,7 +238,7 @@ public sealed class LibGit2SharpWorkingTreeService : IWorkingTreeService
 
                 if (step.Action == "squash")
                     groupMsg += "\n\n" + original.Message.TrimEnd();
-                // fixup: keep groupMsg unchanged (discard this commit's message)
+                // fixup: keep groupMsg (discard this commit's message)
             }
         }
 
