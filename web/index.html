@@ -138,6 +138,22 @@
       </div>
     </div>
 
+    <div id="rebase-modal" hidden>
+      <div id="rebase-card">
+        <div id="rebase-hdr">
+          <span class="title">Interactive Rebase</span>
+          <button id="rebase-modal-close" title="Close (Esc)">×</button>
+        </div>
+        <div id="rebase-info"></div>
+        <div id="rebase-list"></div>
+        <div id="rebase-footer">
+          <span id="rebase-err"></span>
+          <button id="rebase-cancel-btn">Cancel</button>
+          <button id="do-rebase-btn">Rebase</button>
+        </div>
+      </div>
+    </div>
+
     <div id="ctx-menu" hidden></div>
 
     <script type="module" src="/src/main.ts"></script>

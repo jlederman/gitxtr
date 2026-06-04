@@ -3,6 +3,7 @@ import { request, onPush } from "./bridge";
 import { GraphRenderer } from "./graphRenderer";
 import { showCommit, showWorkingTree, initDiffToolbar, initFileNav, initDetailContextMenus } from "./detail";
 import { initCommitModal, openCommitModal } from "./commitModal";
+import { initRebaseModal, openRebaseModal } from "./rebaseModal";
 import { initSettings, applyAppearance, type Settings } from "./settings";
 import { initSplitter } from "./splitter";
 import { initRepos, getCurrentRepo } from "./repos";
@@ -44,8 +45,9 @@ const renderer = new GraphRenderer(
     items.push({ label: "Create branch here…", action: "branch:create" });
     if (row.sha !== "WIP") {
       items.push(
-        { label: "Revert commit",      action: "commit:revert" },
-        { label: "Cherry-pick commit", action: "commit:cherry-pick" },
+        { label: "Revert commit",              action: "commit:revert" },
+        { label: "Cherry-pick commit",         action: "commit:cherry-pick" },
+        { label: "Interactive rebase from here…", action: "commit:irebase" },
       );
     }
     items.push(
@@ -164,6 +166,7 @@ async function boot(): Promise<void> {
   initDiffToolbar(settings.diffView, (m) => void request("saveSettings", { settings: { diffView: m } }));
   initFileNav();
   initCommitModal();
+  initRebaseModal();
 
   initContextMenu((action, payload) => {
     const p = payload as Record<string, unknown>;
@@ -190,6 +193,17 @@ async function boot(): Promise<void> {
         if (repo) void commitOp(repo, "revert", row.sha);
       } else if (action === "commit:cherry-pick") {
         if (repo) void commitOp(repo, "cherryPick", row.sha);
+      } else if (action === "commit:irebase") {
+        if (repo) {
+          const clickedIdx = fullView.rows.findIndex(r => r.sha === row.sha);
+          if (clickedIdx >= 0) {
+            const toRebase = fullView.rows
+              .slice(0, clickedIdx + 1)
+              .filter(r => r.sha !== "WIP")
+              .reverse(); // oldest first (git rebase -i convention)
+            openRebaseModal(toRebase, repo);
+          }
+        }
       }
     } else if (p.kind === "file") {
       if (action === "copy-path") void navigator.clipboard.writeText(p.path as string);

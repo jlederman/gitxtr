@@ -84,6 +84,7 @@ var dispatcher = new MessageDispatcher(
         ["getGitIdentity"]   = new GetGitIdentityHandler(gitConfig, fallbackRepo),
         ["setGitIdentity"]   = new SetGitIdentityHandler(gitConfig, fallbackRepo),
         ["commitOp"]         = new CommitOpHandler(workingTree, fallbackRepo),
+        ["interactiveRebase"] = new InteractiveRebaseHandler(workingTree, fallbackRepo),
         ["branchOp"]         = new BranchOpHandler(branches, fallbackRepo),
     },
     jsonOpts,

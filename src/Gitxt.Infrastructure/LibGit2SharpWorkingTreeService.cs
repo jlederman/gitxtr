@@ -156,6 +156,85 @@ public sealed class LibGit2SharpWorkingTreeService : IWorkingTreeService
             throw new InvalidOperationException("Cherry-pick resulted in conflicts — resolve them manually.");
     }
 
+    public void InteractiveRebase(string repoPath, IReadOnlyList<RebaseStep> steps)
+    {
+        if (steps.Count == 0) return;
+
+        using var repo = new Repository(repoPath);
+        var name  = repo.Config.GetValueOrDefault<string>("user.name")
+                    ?? throw new InvalidOperationException("Git user.name is not configured");
+        var email = repo.Config.GetValueOrDefault<string>("user.email") ?? "";
+        var sig   = new Signature(name, email, DateTimeOffset.Now);
+
+        // The base is the parent of the oldest step (steps[0]).
+        var firstOriginal = repo.Lookup<Commit>(steps[0].Sha)
+            ?? throw new InvalidOperationException($"Commit '{steps[0].Sha}' not found");
+        var baseCommit = firstOriginal.Parents.FirstOrDefault()
+            ?? throw new InvalidOperationException("Cannot rebase root commit");
+
+        var originalHead = repo.Head.Tip;
+        try
+        {
+            repo.Reset(ResetMode.Hard, baseCommit);
+            ExecuteSteps(repo, sig, steps);
+        }
+        catch
+        {
+            repo.Reset(ResetMode.Hard, originalHead);
+            throw;
+        }
+    }
+
+    private static void ExecuteSteps(Repository repo, Signature sig, IReadOnlyList<RebaseStep> steps)
+    {
+        Commit? groupBase = null;   // parent of the first pick in the current squash group
+        string? groupMsg  = null;
+
+        void FlushGroup()
+        {
+            if (groupBase is null) return;
+            repo.Reset(ResetMode.Soft, groupBase);
+            repo.Commit(groupMsg!, sig, sig);
+            groupBase = null;
+            groupMsg  = null;
+        }
+
+        foreach (var step in steps)
+        {
+            var original = repo.Lookup<Commit>(step.Sha)
+                ?? throw new InvalidOperationException($"Commit '{step.Sha}' not found");
+
+            if (step.Action == "drop") continue;
+
+            if (step.Action == "pick")
+            {
+                FlushGroup();
+                var result = repo.CherryPick(original, sig);
+                if (result.Status == CherryPickStatus.Conflicts)
+                    throw new InvalidOperationException($"Cherry-pick of {step.Sha[..7]} resulted in conflicts.");
+            }
+            else // squash or fixup
+            {
+                if (groupBase is null)
+                {
+                    // Start a squash group anchored at the parent of the current HEAD.
+                    groupBase = repo.Head.Tip.Parents.First();
+                    groupMsg  = repo.Head.Tip.Message.TrimEnd();
+                }
+
+                var result = repo.CherryPick(original, sig);
+                if (result.Status == CherryPickStatus.Conflicts)
+                    throw new InvalidOperationException($"Cherry-pick of {step.Sha[..7]} resulted in conflicts.");
+
+                if (step.Action == "squash")
+                    groupMsg += "\n\n" + original.Message.TrimEnd();
+                // fixup: keep groupMsg unchanged (discard this commit's message)
+            }
+        }
+
+        FlushGroup();
+    }
+
     private static string StatusChar(ChangeKind kind) => kind switch
     {
         ChangeKind.Added   => "A",
