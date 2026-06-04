@@ -20,9 +20,8 @@ public sealed class LibGit2SharpWorkingTreeService : IWorkingTreeService
         // Staged changes: HEAD → Index  (equivalent to git diff --staged)
         var stagedPatch = repo.Diff.Compare<Patch>(headTree, DiffTargets.Index);
 
-        // All working-directory changes vs HEAD; used for unstaged-file patches.
-        // For files that are also staged this shows the combined diff — acceptable for now.
-        var workdirPatch = repo.Diff.Compare<Patch>(headTree, DiffTargets.WorkingDirectory);
+        // Unstaged changes: Index → WorkDir  (equivalent to git diff)
+        var unstagedPatch = repo.Diff.Compare<Patch>();
 
         var stagedPaths = new HashSet<string>(stagedPatch.Select(e => e.Path), StringComparer.Ordinal);
 
@@ -51,7 +50,7 @@ public sealed class LibGit2SharpWorkingTreeService : IWorkingTreeService
             }
             else
             {
-                var pe = workdirPatch[entry.FilePath];
+                var pe = unstagedPatch[entry.FilePath];
                 unstaged.Add(new WorkingTreeFileDto(
                     entry.FilePath,
                     pe is not null ? StatusChar(pe.Status) : "M",
