@@ -161,6 +161,11 @@ public sealed class LibGit2SharpWorkingTreeService : IWorkingTreeService
         if (steps.Count == 0) return;
 
         using var repo = new Repository(repoPath);
+
+        if (repo.RetrieveStatus(new StatusOptions { IncludeUntracked = false }).IsDirty)
+            throw new InvalidOperationException(
+                "Cannot rebase: there are uncommitted changes. Commit or discard them first.");
+
         var name  = repo.Config.GetValueOrDefault<string>("user.name")
                     ?? throw new InvalidOperationException("Git user.name is not configured");
         var email = repo.Config.GetValueOrDefault<string>("user.email") ?? "";
