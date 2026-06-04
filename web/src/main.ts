@@ -190,9 +190,11 @@ async function boot(): Promise<void> {
         const name = prompt("New branch name:")?.trim();
         if (repo && name) void branchOp(repo, "create", { name, sha: row.sha, checkout: true });
       } else if (action === "commit:revert") {
-        if (repo) void commitOp(repo, "revert", row.sha);
+        if (repo && confirm(`Revert "${row.summary}"?\n\nA new commit will be created that undoes these changes.`))
+          void commitOp(repo, "revert", row.sha);
       } else if (action === "commit:cherry-pick") {
-        if (repo) void commitOp(repo, "cherryPick", row.sha);
+        if (repo && confirm(`Cherry-pick "${row.summary}" onto the current branch?`))
+          void commitOp(repo, "cherryPick", row.sha);
       } else if (action === "commit:irebase") {
         if (repo) {
           const clickedIdx = fullView.rows.findIndex(r => r.sha === row.sha);
