@@ -31,6 +31,17 @@ const renderer = new GraphRenderer(
   },
   (row, x, y) => {
     const items: { label: string; action: string }[] = [];
+    const localBranches = row.refs.filter(r => r.kind === "LocalBranch");
+    for (const ref of localBranches) {
+      items.push({ label: `Checkout ${ref.name}`, action: `branch:checkout:${ref.name}` });
+    }
+    for (const ref of localBranches) {
+      items.push({ label: `Delete ${ref.name}`, action: `branch:delete:${ref.name}` });
+    }
+    for (const ref of localBranches) {
+      items.push({ label: `Rename ${ref.name}…`, action: `branch:rename:${ref.name}` });
+    }
+    items.push({ label: "Create branch here…", action: "branch:create" });
     if (row.sha !== "WIP") {
       items.push(
         { label: "Revert commit",      action: "commit:revert" },
@@ -127,7 +138,20 @@ async function boot(): Promise<void> {
       if (action === "copy-sha")           void navigator.clipboard.writeText(row.shortSha);
       else if (action === "copy-full-sha") void navigator.clipboard.writeText(row.sha);
       else if (action === "copy-message")  void navigator.clipboard.writeText(row.summary);
-      else if (action === "commit:revert") {
+      else if (action.startsWith("branch:checkout:")) {
+        const name = action.slice("branch:checkout:".length);
+        if (repo) void branchOp(repo, "checkout", { name });
+      } else if (action.startsWith("branch:delete:")) {
+        const name = action.slice("branch:delete:".length);
+        if (repo && confirm(`Delete branch "${name}"?`)) void branchOp(repo, "delete", { name });
+      } else if (action.startsWith("branch:rename:")) {
+        const oldName = action.slice("branch:rename:".length);
+        const newName = prompt(`Rename "${oldName}" to:`)?.trim();
+        if (repo && newName) void branchOp(repo, "rename", { oldName, newName });
+      } else if (action === "branch:create") {
+        const name = prompt("New branch name:")?.trim();
+        if (repo && name) void branchOp(repo, "create", { name, sha: row.sha, checkout: true });
+      } else if (action === "commit:revert") {
         if (repo) void commitOp(repo, "revert", row.sha);
       } else if (action === "commit:cherry-pick") {
         if (repo) void commitOp(repo, "cherryPick", row.sha);
@@ -225,6 +249,15 @@ function applyFilter(): void {
   renderer.setView(display);
   if (q) statusEl.textContent = `${filtered.rows.length} of ${fullView.rows.length} commits match`;
   else statusEl.textContent = `${fullView.rows.length} commits${fullView.truncated ? " (truncated)" : ""}`;
+}
+
+async function branchOp(repo: string, op: string, params: Record<string, unknown>): Promise<void> {
+  try {
+    await request<null>("branchOp", { repoPath: repo, op, ...params });
+    void loadGraph(repo);
+  } catch (e) {
+    alert(`Branch operation failed: ${e instanceof Error ? e.message : String(e)}`);
+  }
 }
 
 async function commitOp(repo: string, op: string, sha: string): Promise<void> {

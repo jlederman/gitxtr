@@ -18,6 +18,7 @@ using var loggerFactory = LoggerFactory.Create(b => b
 var reader        = new LibGit2SharpRepositoryReader();
 var service       = new GraphQueryService(reader, new GraphLayoutEngine());
 var workingTree   = new LibGit2SharpWorkingTreeService();
+var branches      = new LibGit2SharpBranchService();
 var settingsStore = new JsonSettingsStore(loggerFactory.CreateLogger<JsonSettingsStore>());
 var gitConfig     = new LibGit2SharpGitConfigService(loggerFactory.CreateLogger<LibGit2SharpGitConfigService>());
 
@@ -82,6 +83,7 @@ var dispatcher = new MessageDispatcher(
         ["getGitIdentity"]   = new GetGitIdentityHandler(gitConfig, fallbackRepo),
         ["setGitIdentity"]   = new SetGitIdentityHandler(gitConfig, fallbackRepo),
         ["commitOp"]         = new CommitOpHandler(workingTree, fallbackRepo),
+        ["branchOp"]         = new BranchOpHandler(branches, fallbackRepo),
     },
     jsonOpts,
     loggerFactory.CreateLogger<MessageDispatcher>());
