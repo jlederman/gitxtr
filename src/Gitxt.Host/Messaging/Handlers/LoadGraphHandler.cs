@@ -4,7 +4,11 @@ using Gitxt.Host.Messaging;
 
 namespace Gitxt.Host.Messaging.Handlers;
 
-internal sealed class LoadGraphHandler(IGraphQueryService service, string fallbackRepo, RepoWatcherService? watcher = null) : IMessageHandler
+internal sealed class LoadGraphHandler(
+    IGraphQueryService service,
+    string fallbackRepo,
+    RepoWatcherService? watcher = null,
+    IWorkingTreeService? workingTree = null) : IMessageHandler
 {
     public object? Handle(MessageContext ctx)
     {
@@ -15,6 +19,8 @@ internal sealed class LoadGraphHandler(IGraphQueryService service, string fallba
         if (string.IsNullOrEmpty(path))
             throw new InvalidOperationException("no repository selected");
         watcher?.Watch(path);
-        return service.GetGraph(path, limit);
+        var graph = service.GetGraph(path, limit);
+        bool hasChanges = workingTree?.HasChanges(path) ?? false;
+        return graph with { HasUncommittedChanges = hasChanges };
     }
 }

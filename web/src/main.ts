@@ -1,7 +1,7 @@
 import "./style.css";
 import { request, onPush } from "./bridge";
 import { GraphRenderer } from "./graphRenderer";
-import { showCommit, initDiffToolbar, initFileNav, initDetailContextMenus } from "./detail";
+import { showCommit, showWorkingTree, initDiffToolbar, initFileNav, initDetailContextMenus } from "./detail";
 import { initSettings, applyAppearance, type Settings } from "./settings";
 import { initSplitter } from "./splitter";
 import { initRepos, getCurrentRepo } from "./repos";
@@ -20,8 +20,13 @@ const renderer = new GraphRenderer(
   canvas,
   viewport,
   (row: Row) => {
-    statusEl.textContent = `${row.shortSha} — ${row.summary}`;
-    void showCommit(row.sha);
+    statusEl.textContent = row.sha === "WIP" ? row.summary : `${row.shortSha} — ${row.summary}`;
+    if (row.sha === "WIP") {
+      const repo = getCurrentRepo();
+      if (repo) void showWorkingTree(repo);
+    } else {
+      void showCommit(row.sha);
+    }
   },
   (row, x, y) => showContextMenu(
     [
@@ -167,6 +172,17 @@ async function boot(): Promise<void> {
 
 let fullView: GraphView = { rows: [], width: 0, truncated: false };
 
+function makeWipRow(firstReal: Row | undefined): Row {
+  return {
+    index: -1, sha: "WIP", shortSha: "WIP",
+    summary: "Working tree changes",
+    author: "", whenIso: "",
+    column: 0, color: 0,
+    edges: firstReal ? [{ from: 0, to: firstReal.column, color: firstReal.color }] : [],
+    refs: [{ name: "WIP", kind: "wip" }],
+  };
+}
+
 function filterView(view: GraphView, query: string): GraphView {
   const q = query.trim().toLowerCase();
   if (!q) return view;
@@ -182,9 +198,13 @@ function filterView(view: GraphView, query: string): GraphView {
 
 function applyFilter(): void {
   const q = searchEl.value.trim();
-  const view = filterView(fullView, q);
-  renderer.setView(view);
-  if (q) statusEl.textContent = `${view.rows.length} of ${fullView.rows.length} commits match`;
+  const filtered = filterView(fullView, q);
+  // Prepend the WIP row only when not filtering — it doesn't make sense as a search result.
+  const display: GraphView = (!q && fullView.hasUncommittedChanges)
+    ? { ...filtered, rows: [makeWipRow(fullView.rows[0]), ...filtered.rows] }
+    : filtered;
+  renderer.setView(display);
+  if (q) statusEl.textContent = `${filtered.rows.length} of ${fullView.rows.length} commits match`;
   else statusEl.textContent = `${fullView.rows.length} commits${fullView.truncated ? " (truncated)" : ""}`;
 }
 

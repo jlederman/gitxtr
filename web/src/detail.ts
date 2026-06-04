@@ -1,6 +1,7 @@
 import { request } from "./bridge";
 import { getCurrentRepo } from "./repos";
 import { showContextMenu } from "./contextMenu";
+import type { WorkingTreeView, WorkingTreeFile } from "./types";
 
 interface FileChange { path: string; status: string; added: number; deleted: number; }
 interface Ref { name: string; kind: string; }
@@ -14,9 +15,10 @@ const filesEl = () => document.getElementById("detail-files") as HTMLElement;
 const bodyEl = () => document.getElementById("diff-body") as HTMLElement; // diff scroll + content
 
 // Guards against out-of-order responses when arrowing through commits quickly.
-let token = 0;
+let seq = 0;
 let diffMode: "unified" | "split" = "unified";
 let lastDetails: CommitDetails | null = null;
+let lastWipFiles: WorkingTreeFile[] | null = null;
 let selectedFileIdx = -1;
 let totalFiles = 0;
 
@@ -39,7 +41,19 @@ function selectFile(idx: number): void {
 }
 
 function activateFile(idx: number): void {
-  document.getElementById(`diffsec-${idx}`)?.scrollIntoView({ block: "start", behavior: "smooth" });
+  if (lastWipFiles) {
+    const f = lastWipFiles[idx];
+    if (!f) return;
+    renderPatchString(f.patch);
+  } else {
+    document.getElementById(`diffsec-${idx}`)?.scrollIntoView({ block: "start", behavior: "smooth" });
+  }
+}
+
+function renderPatchString(patch: string): void {
+  const html = diffMode === "split" ? renderSplit(patch) : `<div class="diff-wrap">${renderUnified(patch)}</div>`;
+  bodyEl().innerHTML = html || `<div class="trunc">no textual diff</div>`;
+  bodyEl().scrollTop = 0;
 }
 
 function esc(s: string): string {
@@ -58,27 +72,97 @@ export function initDiffToolbar(initial: string, onChange: (mode: string) => voi
       if (m === diffMode) return;
       diffMode = m;
       sync();
-      if (lastDetails) renderDiff(lastDetails);
+      if (lastWipFiles && selectedFileIdx >= 0) activateFile(selectedFileIdx);
+      else if (lastDetails) renderDiff(lastDetails);
       onChange(m);
     }),
   );
 }
 
 export async function showCommit(sha: string): Promise<void> {
-  const my = ++token;
+  const my = ++seq;
+  lastWipFiles = null;
   try {
     const d = await request<CommitDetails>("getCommitDetails", { sha, repoPath: getCurrentRepo() });
-    if (my !== token) return;
+    if (my !== seq) return;
     lastDetails = d;
     renderMeta(d);
     renderFiles(d);
     renderDiff(d);
   } catch (e) {
-    if (my !== token) return;
+    if (my !== seq) return;
     metaEl().innerHTML = `<span class="when">error: ${esc(e instanceof Error ? e.message : String(e))}</span>`;
     filesEl().innerHTML = "";
     bodyEl().innerHTML = "";
   }
+}
+
+export async function showWorkingTree(repo: string): Promise<void> {
+  const my = ++seq;
+  lastDetails = null;
+  metaEl().innerHTML = `<span class="subject">Working tree changes</span>`;
+  filesEl().innerHTML = "";
+  bodyEl().innerHTML = "";
+  try {
+    const view = await request<WorkingTreeView>("getWorkingTree", { repoPath: repo });
+    if (my !== seq) return;
+    renderWipMeta(view);
+    renderWipFiles(view);
+  } catch (e) {
+    if (my !== seq) return;
+    metaEl().innerHTML = `<span class="when">error: ${esc(e instanceof Error ? e.message : String(e))}</span>`;
+  }
+}
+
+function renderWipMeta(view: WorkingTreeView): void {
+  const s = view.staged.length;
+  const u = view.unstaged.length;
+  metaEl().innerHTML =
+    `<div class="subject">Working tree changes</div>` +
+    (s > 0 ? `<div><span class="sha">${s} staged</span></div>` : "") +
+    (u > 0 ? `<div><span class="when">${u} unstaged</span></div>` : "");
+}
+
+function renderWipFiles(view: WorkingTreeView): void {
+  const allFiles = [...view.staged, ...view.unstaged];
+  lastWipFiles = allFiles;
+  totalFiles = allFiles.length;
+  selectedFileIdx = -1;
+
+  let html = "";
+  if (view.staged.length > 0) {
+    html += `<div class="fhead">Staged changes</div>`;
+    html += view.staged.map((f, i) => wipFileItem(f, i)).join("");
+  }
+  if (view.unstaged.length > 0) {
+    html += `<div class="fhead">Unstaged changes</div>`;
+    const off = view.staged.length;
+    html += view.unstaged.map((f, i) => wipFileItem(f, off + i)).join("");
+  }
+  if (allFiles.length === 0) {
+    html = `<div class="fitem muted">No changes in working tree</div>`;
+  }
+
+  const el = filesEl();
+  el.innerHTML = html;
+  el.querySelectorAll<HTMLElement>(".fitem[data-idx]").forEach((item) => {
+    item.addEventListener("click", () => {
+      selectFile(parseInt(item.dataset.idx!));
+      el.focus({ preventScroll: true });
+    });
+  });
+}
+
+function wipFileItem(f: WorkingTreeFile, idx: number): string {
+  const cls = f.status === "A" ? "st-add" : f.status === "D" || f.status === "?" ? "st-del" : "st-mod";
+  const indicator = f.staged
+    ? `<span class="fnums adds" title="staged">●</span>`
+    : `<span class="fnums dels" title="unstaged">○</span>`;
+  return `<div class="fitem" data-idx="${idx}" title="${esc(f.path)}">` +
+    `<span class="fstat ${cls}">${esc(f.status)}</span>` +
+    `<span class="fpath">${esc(f.path)}</span>` +
+    indicator +
+    `</div>`;
 }
 
 function renderMeta(d: CommitDetails): void {
@@ -133,13 +217,13 @@ function renderFiles(d: CommitDetails): void {
 }
 
 function renderDiff(d: CommitDetails): void {
-  const html = diffMode === "split" ? renderSplit(d) : renderUnified(d);
+  const html = diffMode === "split" ? renderSplit(d.diff) : `<div class="diff-wrap">${renderUnified(d.diff, d.diffTruncated)}</div>`;
   bodyEl().innerHTML = html || `<div class="trunc">no textual diff</div>`;
   bodyEl().scrollTop = 0;
 }
 
-function renderUnified(d: CommitDetails): string {
-  const lines = d.diff.length ? d.diff.split("\n") : [];
+function renderUnified(diff: string, truncated = false): string {
+  const lines = diff.length ? diff.split("\n") : [];
   const out: string[] = [];
   let sec = -1;
   for (const line of lines) {
@@ -152,14 +236,14 @@ function renderUnified(d: CommitDetails): string {
     else if (line.startsWith("-")) cls = "line del";
     out.push(`<div class="${cls}"${attr}>${esc(line) || "&nbsp;"}</div>`);
   }
-  if (d.diffTruncated) out.push(`<div class="trunc">… diff truncated (large commit)</div>`);
-  return `<div class="diff-wrap">${out.join("")}</div>`;
+  if (truncated) out.push(`<div class="trunc">… diff truncated (large commit)</div>`);
+  return out.join("");
 }
 
 // Side-by-side view: within each hunk, pair runs of removed/added lines (old left, new right);
 // context lines appear on both sides. Line numbers track the hunk's -old/+new counters.
-function renderSplit(d: CommitDetails): string {
-  const lines = d.diff.length ? d.diff.split("\n") : [];
+function renderSplit(diff: string): string {
+  const lines = diff.length ? diff.split("\n") : [];
   const out: string[] = [];
   let sec = -1;
   let oldLn = 0;
@@ -206,7 +290,6 @@ function renderSplit(d: CommitDetails): string {
     }
   }
   flush();
-  if (d.diffTruncated) out.push(`<div class="trunc">… diff truncated (large commit)</div>`);
   return out.join("");
 }
 

@@ -26,4 +26,17 @@ export interface GraphView {
   rows: Row[];
   width: number;
   truncated: boolean;
+  hasUncommittedChanges?: boolean;
+}
+
+export interface WorkingTreeFile {
+  path: string;
+  status: string;
+  staged: boolean;
+  patch: string;
+}
+
+export interface WorkingTreeView {
+  staged: WorkingTreeFile[];
+  unstaged: WorkingTreeFile[];
 }

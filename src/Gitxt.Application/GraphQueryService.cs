@@ -11,7 +11,7 @@ public sealed record RowDto(
 
 /// <summary><paramref name="Truncated"/> is true when the result hit the requested limit —
 /// surfaced so the UI never silently implies it showed the whole history.</summary>
-public sealed record GraphView(IReadOnlyList<RowDto> Rows, int Width, bool Truncated);
+public sealed record GraphView(IReadOnlyList<RowDto> Rows, int Width, bool Truncated, bool HasUncommittedChanges = false);
 
 public sealed record FileChangeDto(string Path, string Status, int Added, int Deleted);
 public sealed record CommitDetailsDto(
