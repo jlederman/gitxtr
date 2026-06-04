@@ -29,15 +29,21 @@ const renderer = new GraphRenderer(
       void showCommit(row.sha);
     }
   },
-  (row, x, y) => showContextMenu(
-    [
+  (row, x, y) => {
+    const items: { label: string; action: string }[] = [];
+    if (row.sha !== "WIP") {
+      items.push(
+        { label: "Revert commit",      action: "commit:revert" },
+        { label: "Cherry-pick commit", action: "commit:cherry-pick" },
+      );
+    }
+    items.push(
       { label: "Copy short SHA", action: "copy-sha" },
       { label: "Copy full SHA",  action: "copy-full-sha" },
       { label: "Copy message",   action: "copy-message" },
-    ],
-    { kind: "commit", row },
-    x, y,
-  ),
+    );
+    showContextMenu(items, { kind: "commit", row }, x, y);
+  },
 );
 
 const DEFAULT_SETTINGS: BootSettings = {
@@ -116,10 +122,16 @@ async function boot(): Promise<void> {
   initContextMenu((action, payload) => {
     const p = payload as Record<string, unknown>;
     if (p.kind === "commit") {
-      const row = p.row as { sha: string; shortSha: string; summary: string };
-      if (action === "copy-sha")       void navigator.clipboard.writeText(row.shortSha);
+      const row = p.row as Row;
+      const repo = getCurrentRepo();
+      if (action === "copy-sha")           void navigator.clipboard.writeText(row.shortSha);
       else if (action === "copy-full-sha") void navigator.clipboard.writeText(row.sha);
       else if (action === "copy-message")  void navigator.clipboard.writeText(row.summary);
+      else if (action === "commit:revert") {
+        if (repo) void commitOp(repo, "revert", row.sha);
+      } else if (action === "commit:cherry-pick") {
+        if (repo) void commitOp(repo, "cherryPick", row.sha);
+      }
     } else if (p.kind === "file") {
       if (action === "copy-path") void navigator.clipboard.writeText(p.path as string);
     } else if (p.kind === "diff-line") {
@@ -213,6 +225,15 @@ function applyFilter(): void {
   renderer.setView(display);
   if (q) statusEl.textContent = `${filtered.rows.length} of ${fullView.rows.length} commits match`;
   else statusEl.textContent = `${fullView.rows.length} commits${fullView.truncated ? " (truncated)" : ""}`;
+}
+
+async function commitOp(repo: string, op: string, sha: string): Promise<void> {
+  try {
+    await request<null>("commitOp", { repoPath: repo, op, sha });
+    void loadGraph(repo);
+  } catch (e) {
+    alert(`Operation failed: ${e instanceof Error ? e.message : String(e)}`);
+  }
 }
 
 async function loadGraph(repo: string): Promise<void> {

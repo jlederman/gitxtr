@@ -16,4 +16,6 @@ public interface IWorkingTreeService
     void StageAll(string repoPath);
     void UnstageAll(string repoPath);
     void CreateCommit(string repoPath, string message, bool amend);
+    void RevertCommit(string repoPath, string sha);
+    void CherryPick(string repoPath, string sha);
 }

@@ -81,6 +81,7 @@ var dispatcher = new MessageDispatcher(
         ["removeRepo"]       = new RemoveRepoHandler(settingsStore),
         ["getGitIdentity"]   = new GetGitIdentityHandler(gitConfig, fallbackRepo),
         ["setGitIdentity"]   = new SetGitIdentityHandler(gitConfig, fallbackRepo),
+        ["commitOp"]         = new CommitOpHandler(workingTree, fallbackRepo),
     },
     jsonOpts,
     loggerFactory.CreateLogger<MessageDispatcher>());

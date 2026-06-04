@@ -129,6 +129,34 @@ public sealed class LibGit2SharpWorkingTreeService : IWorkingTreeService
         repo.Commit(message, sig, sig, new CommitOptions { AmendPreviousCommit = amend });
     }
 
+    public void RevertCommit(string repoPath, string sha)
+    {
+        using var repo = new Repository(repoPath);
+        var commit = repo.Lookup<Commit>(sha)
+            ?? throw new InvalidOperationException($"Commit '{sha}' not found");
+        var name  = repo.Config.GetValueOrDefault<string>("user.name")
+                    ?? throw new InvalidOperationException("Git user.name is not configured");
+        var email = repo.Config.GetValueOrDefault<string>("user.email") ?? "";
+        var sig   = new Signature(name, email, DateTimeOffset.Now);
+        var result = repo.Revert(commit, sig);
+        if (result.Status == RevertStatus.Conflicts)
+            throw new InvalidOperationException("Revert resulted in conflicts — resolve them manually.");
+    }
+
+    public void CherryPick(string repoPath, string sha)
+    {
+        using var repo = new Repository(repoPath);
+        var commit = repo.Lookup<Commit>(sha)
+            ?? throw new InvalidOperationException($"Commit '{sha}' not found");
+        var name  = repo.Config.GetValueOrDefault<string>("user.name")
+                    ?? throw new InvalidOperationException("Git user.name is not configured");
+        var email = repo.Config.GetValueOrDefault<string>("user.email") ?? "";
+        var sig   = new Signature(name, email, DateTimeOffset.Now);
+        var result = repo.CherryPick(commit, sig);
+        if (result.Status == CherryPickStatus.Conflicts)
+            throw new InvalidOperationException("Cherry-pick resulted in conflicts — resolve them manually.");
+    }
+
     private static string StatusChar(ChangeKind kind) => kind switch
     {
         ChangeKind.Added   => "A",
