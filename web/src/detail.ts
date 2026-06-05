@@ -299,20 +299,80 @@ function renderDiff(d: CommitDetails): void {
   bodyEl().scrollTop = 0;
 }
 
+// ── Inline word-level diff (#9) ───────────────────────────────────────────
+// Token-level LCS between a removed line and its paired added line; tokens unique to each
+// side get a stronger highlight so only the actual change stands out. Returns escaped HTML.
+function tokenize(s: string): string[] {
+  return s.match(/\s+|\w+|[^\w\s]+/g) ?? [];
+}
+
+function wordDiff(oldText: string, newText: string): [string, string] {
+  const a = tokenize(oldText);
+  const b = tokenize(newText);
+  const m = a.length, n = b.length;
+  // Guard against pathological lines (e.g. minified) where O(m·n) LCS would blow up.
+  if (m > 400 || n > 400) return [esc(oldText), esc(newText)];
+
+  const dp: number[][] = Array.from({ length: m + 1 }, () => new Array<number>(n + 1).fill(0));
+  for (let i = m - 1; i >= 0; i--)
+    for (let j = n - 1; j >= 0; j--)
+      dp[i][j] = a[i] === b[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+
+  let oldHtml = "", newHtml = "";
+  let i = 0, j = 0;
+  while (i < m && j < n) {
+    if (a[i] === b[j]) { oldHtml += esc(a[i]); newHtml += esc(b[j]); i++; j++; }
+    else if (dp[i + 1][j] >= dp[i][j + 1]) { oldHtml += `<span class="wd-del">${esc(a[i++])}</span>`; }
+    else { newHtml += `<span class="wd-add">${esc(b[j++])}</span>`; }
+  }
+  while (i < m) oldHtml += `<span class="wd-del">${esc(a[i++])}</span>`;
+  while (j < n) newHtml += `<span class="wd-add">${esc(b[j++])}</span>`;
+  return [oldHtml, newHtml];
+}
+
+// Pair buffered removed/added lines by index; modified pairs get a word-diff, lone lines
+// keep whole-line colouring. Returns [oldLineHtml[], newLineHtml[]] (content after prefix).
+function pairWordDiffs(dels: string[], adds: string[]): [string[], string[]] {
+  const oldH: string[] = [];
+  const newH: string[] = [];
+  const n = Math.max(dels.length, adds.length);
+  for (let i = 0; i < n; i++) {
+    const d = dels[i];
+    const a = adds[i];
+    if (d !== undefined && a !== undefined) {
+      const [oh, ah] = wordDiff(d, a);
+      oldH.push(oh); newH.push(ah);
+    } else if (d !== undefined) oldH.push(esc(d));
+    else newH.push(esc(a));
+  }
+  return [oldH, newH];
+}
+
 export function renderUnified(diff: string, truncated = false): string {
   const lines = diff.length ? diff.split("\n") : [];
   const out: string[] = [];
   let sec = -1;
+  let dels: string[] = [];
+  let adds: string[] = [];
+
+  // Unified keeps the removed-block-then-added-block ordering, with word highlights.
+  const flush = () => {
+    const [oldH, newH] = pairWordDiffs(dels, adds);
+    for (const oh of oldH) out.push(`<div class="line del">-${oh || "&nbsp;"}</div>`);
+    for (const ah of newH) out.push(`<div class="line add">+${ah || "&nbsp;"}</div>`);
+    dels = [];
+    adds = [];
+  };
+
   for (const line of lines) {
-    let cls = "line";
-    let attr = "";
-    if (line.startsWith("diff --")) { attr = ` id="diffsec-${++sec}"`; cls = "line fhdr"; } // --git, --cc, --combined
-    else if (line.startsWith("+++") || line.startsWith("---") || line.startsWith("index ")) cls = "line fhdr";
-    else if (line.startsWith("@@")) cls = "line hunk";
-    else if (line.startsWith("+")) cls = "line add";
-    else if (line.startsWith("-")) cls = "line del";
-    out.push(`<div class="${cls}"${attr}>${esc(line) || "&nbsp;"}</div>`);
+    if (line.startsWith("diff --")) { flush(); out.push(`<div class="line fhdr" id="diffsec-${++sec}">${esc(line) || "&nbsp;"}</div>`); }
+    else if (line.startsWith("+++") || line.startsWith("---") || line.startsWith("index ")) { flush(); out.push(`<div class="line fhdr">${esc(line) || "&nbsp;"}</div>`); }
+    else if (line.startsWith("@@")) { flush(); out.push(`<div class="line hunk">${esc(line) || "&nbsp;"}</div>`); }
+    else if (line.startsWith("+")) adds.push(line.slice(1));
+    else if (line.startsWith("-")) dels.push(line.slice(1));
+    else { flush(); out.push(`<div class="line">${esc(line) || "&nbsp;"}</div>`); }
   }
+  flush();
   if (truncated) out.push(`<div class="trunc">… diff truncated (large commit)</div>`);
   return out.join("");
 }
@@ -333,9 +393,12 @@ function renderSplit(diff: string): string {
     for (let i = 0; i < n; i++) {
       const l = dels[i];
       const r = adds[i];
+      let lh = l ? esc(l.text) : "";
+      let rh = r ? esc(r.text) : "";
+      if (l && r) [lh, rh] = wordDiff(l.text, r.text); // modified pair → highlight changed words
       out.push(srow(
-        l ? l.no : null, l ? l.text : "", l ? "del" : "blank",
-        r ? r.no : null, r ? r.text : "", r ? "add" : "blank",
+        l ? l.no : null, lh, l ? "del" : "blank",
+        r ? r.no : null, rh, r ? "add" : "blank",
       ));
     }
     dels = [];
@@ -360,7 +423,7 @@ function renderSplit(diff: string): string {
       adds.push({ no: newLn++, text: line.slice(1) });
     } else {
       flush();
-      const text = line.startsWith(" ") ? line.slice(1) : line;
+      const text = esc(line.startsWith(" ") ? line.slice(1) : line);
       out.push(srow(oldLn, text, "ctx", newLn, text, "ctx"));
       oldLn++;
       newLn++;
@@ -370,10 +433,11 @@ function renderSplit(diff: string): string {
   return out.join("");
 }
 
-function srow(lno: number | null, ltext: string, lcls: string, rno: number | null, rtext: string, rcls: string): string {
+// Content args are pre-escaped HTML (callers escape, and may inject word-diff spans).
+function srow(lno: number | null, lhtml: string, lcls: string, rno: number | null, rhtml: string, rcls: string): string {
   return `<div class="srow">` +
-    `<span class="lno">${lno ?? ""}</span><span class="lc ${lcls}">${esc(ltext) || "&nbsp;"}</span>` +
-    `<span class="rno">${rno ?? ""}</span><span class="rc ${rcls}">${esc(rtext) || "&nbsp;"}</span>` +
+    `<span class="lno">${lno ?? ""}</span><span class="lc ${lcls}">${lhtml || "&nbsp;"}</span>` +
+    `<span class="rno">${rno ?? ""}</span><span class="rc ${rcls}">${rhtml || "&nbsp;"}</span>` +
     `</div>`;
 }
 
