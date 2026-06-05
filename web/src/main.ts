@@ -385,15 +385,20 @@ function applyDateFilter(spec: string): void {
   let from: Date | null = null;
   let to: Date | null = null;
 
+  const parseDate = (s: string, suffix: string): Date | null => {
+    const d = new Date(s + suffix);
+    return isNaN(d.getTime()) ? null : d;
+  };
+
   if (spec.includes("..")) {
     const idx = spec.indexOf("..");
     const fromStr = spec.slice(0, idx).trim();
     const toStr   = spec.slice(idx + 2).trim();
-    if (fromStr) from = new Date(fromStr + "T00:00:00");
-    if (toStr)   to   = new Date(toStr   + "T23:59:59");
+    if (fromStr) from = parseDate(fromStr, "T00:00:00");
+    if (toStr)   to   = parseDate(toStr,   "T23:59:59");
   } else if (spec) {
-    from = new Date(spec + "T00:00:00");
-    to   = new Date(spec + "T23:59:59");
+    from = parseDate(spec, "T00:00:00");
+    to   = parseDate(spec, "T23:59:59");
   }
 
   if (!from && !to) return;
