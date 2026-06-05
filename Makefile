@@ -6,7 +6,11 @@
 APP  := src/Gitxt.Host
 REPO ?=
 
-.PHONY: help web app run build test install clean
+# Local installer build (current OS, unsigned). Override as: make pack RID=win-x64 VERSION=1.2.3
+RID     ?= osx-arm64
+VERSION ?= 0.0.1
+
+.PHONY: help web app run build test install clean pack
 
 help:
 	@echo "gitxt make targets:"
@@ -16,6 +20,7 @@ help:
 	@echo "  make build              # dotnet build (also builds the web bundle)"
 	@echo "  make test               # run the domain tests"
 	@echo "  make install            # npm install + dotnet restore"
+	@echo "  make pack [RID= VERSION=] # local unsigned installer via Velopack → ./release"
 	@echo "  make clean              # dotnet clean"
 
 # Terminal 1 — frontend: Vite dev server with hot module reloading on :5173.
@@ -43,3 +48,9 @@ install:
 
 clean:
 	dotnet clean
+
+# Self-contained publish + Velopack pack for the current OS (unsigned). Needs the vpk tool:
+#   dotnet tool install -g vpk
+pack:
+	dotnet publish $(APP)/Gitxt.Host.csproj -c Release -r $(RID) --self-contained true -o publish
+	vpk pack -u gitxt -v $(VERSION) -p publish --packTitle gitxt -o release
