@@ -1,19 +1,13 @@
-using System.Diagnostics;
 using Gitxt.Application;
 
 namespace Gitxt.Infrastructure;
 
-// Remote operations shell out to the user's git executable (via direct process
-// invocation — no command shell). This is what makes SSH and the system credential
-// helpers work cross-platform; LibGit2Sharp ships without an SSH transport and has no
+// Remote operations shell out to the user's git executable (via GitCli — direct process
+// invocation, no command shell). This is what makes SSH and the system credential helpers
+// work cross-platform; LibGit2Sharp ships without an SSH transport and has no
 // credential-helper integration, so it cannot reliably reach real remotes.
 public sealed class GitProcessRemoteService : IRemoteService
 {
-    // Resolved once. Process.Start searches PATH for a bare "git", but GUI apps launched
-    // from Finder/Explorer often have a minimal PATH that omits Homebrew/Git-for-Windows,
-    // so fall back to well-known install locations.
-    private static readonly Lazy<string> GitPath = new(ResolveGit);
-
     public IReadOnlyList<RemoteDto> GetRemotes(string repoPath)
     {
         var (code, output) = Run(repoPath, "remote", "-v");
@@ -66,65 +60,10 @@ public sealed class GitProcessRemoteService : IRemoteService
         return output;
     }
 
+    // Remote ops show git's full chatter (progress/results land on stderr), so combine streams.
     private static (int code, string output) Run(string repoPath, params string[] args)
     {
-        var psi = new ProcessStartInfo
-        {
-            FileName = GitPath.Value,
-            WorkingDirectory = repoPath,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-            CreateNoWindow = true,
-        };
-        foreach (var a in args) psi.ArgumentList.Add(a);
-        // Never block on an interactive credential prompt — git fails fast instead, and we
-        // surface the error. Cached credential helpers and the SSH agent still work.
-        psi.Environment["GIT_TERMINAL_PROMPT"] = "0";
-
-        using var p = Process.Start(psi)
-            ?? throw new InvalidOperationException("failed to start git");
-        // Read both streams concurrently to avoid a pipe-buffer deadlock.
-        var stdout = p.StandardOutput.ReadToEndAsync();
-        var stderr = p.StandardError.ReadToEndAsync();
-        p.WaitForExit();
-        string combined = (stdout.Result + stderr.Result).Trim();
-        return (p.ExitCode, combined);
-    }
-
-    private static string ResolveGit()
-    {
-        string[] candidates = OperatingSystem.IsWindows()
-            ? ["git.exe", @"C:\Program Files\Git\cmd\git.exe", @"C:\Program Files (x86)\Git\cmd\git.exe"]
-            : ["git", "/usr/bin/git", "/usr/local/bin/git", "/opt/homebrew/bin/git"];
-
-        foreach (var c in candidates)
-            if (CanRun(c)) return c;
-
-        throw new InvalidOperationException(
-            "git executable not found. Install Git and make sure it is on your PATH.");
-    }
-
-    private static bool CanRun(string git)
-    {
-        try
-        {
-            using var p = Process.Start(new ProcessStartInfo
-            {
-                FileName = git,
-                Arguments = "--version",
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true,
-            });
-            if (p is null) return false;
-            p.WaitForExit();
-            return p.ExitCode == 0;
-        }
-        catch
-        {
-            return false;
-        }
+        var (code, stdout, stderr) = GitCli.Run(repoPath, args);
+        return (code, (stdout + stderr).Trim());
     }
 }
