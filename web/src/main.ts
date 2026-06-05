@@ -333,6 +333,11 @@ function applyFilter(): void {
     return;
   }
 
+  if (raw.startsWith("date:")) {
+    applyDateFilter(raw.slice(5).trim());
+    return;
+  }
+
   // Text search: dim non-matching rows in the graph to preserve structure.
   const q = raw.toLowerCase();
   const matchSet = new Set(fullView.rows.filter(r => textMatchesSha(q, r)).map(r => r.sha));
@@ -354,6 +359,41 @@ async function applyPathFilter(repo: string, filePath: string): Promise<void> {
   } catch (e) {
     statusEl.textContent = `path filter error: ${e instanceof Error ? e.message : String(e)}`;
   }
+}
+
+function applyDateFilter(spec: string): void {
+  let from: Date | null = null;
+  let to: Date | null = null;
+
+  if (spec.includes("..")) {
+    const idx = spec.indexOf("..");
+    const fromStr = spec.slice(0, idx).trim();
+    const toStr   = spec.slice(idx + 2).trim();
+    if (fromStr) from = new Date(fromStr + "T00:00:00");
+    if (toStr)   to   = new Date(toStr   + "T23:59:59");
+  } else if (spec) {
+    from = new Date(spec + "T00:00:00");
+    to   = new Date(spec + "T23:59:59");
+  }
+
+  if (!from && !to) return;
+
+  const matched = fullView.rows.filter(r => {
+    if (!r.whenIso) return false;
+    const d = new Date(r.whenIso);
+    if (from && d < from) return false;
+    if (to   && d > to)   return false;
+    return true;
+  });
+
+  const display: GraphView = {
+    rows: matched.map(r => ({ ...r, column: 0, edges: [] })),
+    width: 0,
+    truncated: fullView.truncated,
+  };
+  renderer.setFilter(null);
+  renderer.setView(display);
+  statusEl.textContent = `${matched.length} commits in date range`;
 }
 
 async function branchOp(repo: string, op: string, params: Record<string, unknown>): Promise<void> {
