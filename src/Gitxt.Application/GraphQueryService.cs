@@ -19,10 +19,18 @@ public sealed record CommitDetailsDto(
     string Sha, string ShortSha, string Author, string Email, string WhenIso, string Message,
     IReadOnlyList<RefDto> Refs, IReadOnlyList<FileChangeDto> Files, string Diff, bool DiffTruncated);
 
+public sealed record FileHistoryDto(
+    string Sha, string ShortSha, string Summary, string Author, string WhenIso);
+public sealed record BlameLineDto(
+    int LineNumber, string Sha, string ShortSha, string Author, string WhenIso, string Summary, string Content);
+public sealed record FileBlameDto(string Path, IReadOnlyList<BlameLineDto> Lines, bool Truncated);
+
 public interface IGraphQueryService
 {
     GraphView GetGraph(string repoPath, int? limit = null);
     CommitDetailsDto GetCommitDetails(string repoPath, string sha);
+    IReadOnlyList<FileHistoryDto> GetFileHistory(string repoPath, string filePath);
+    FileBlameDto GetBlame(string repoPath, string filePath, string? atSha = null);
 }
 
 public sealed class GraphQueryService(IRepositoryReader reader, GraphLayoutEngine engine)
@@ -66,5 +74,22 @@ public sealed class GraphQueryService(IRepositoryReader reader, GraphLayoutEngin
             refs,
             d.Files.Select(f => new FileChangeDto(f.Path, f.ChangeKind, f.Added, f.Deleted)).ToList(),
             d.UnifiedDiff, d.DiffTruncated);
+    }
+
+    public IReadOnlyList<FileHistoryDto> GetFileHistory(string repoPath, string filePath) =>
+        reader.ReadFileHistory(repoPath, filePath)
+            .Select(c => new FileHistoryDto(
+                c.Id.Sha, c.Id.Short, c.Summary, c.Author, c.WhenUtc.ToString("o")))
+            .ToList();
+
+    public FileBlameDto GetBlame(string repoPath, string filePath, string? atSha = null)
+    {
+        var b = reader.ReadBlame(repoPath, filePath, atSha);
+        return new FileBlameDto(
+            b.Path,
+            b.Lines.Select(l => new BlameLineDto(
+                l.LineNumber, l.Commit.Sha, l.Commit.Short, l.Author,
+                l.WhenUtc.ToString("o"), l.Summary, l.Content)).ToList(),
+            b.Truncated);
     }
 }
