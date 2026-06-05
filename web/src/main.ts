@@ -13,11 +13,14 @@ import type { GraphView, Row } from "./types";
 // getSettings also returns a resolved currentRepo (CLI arg ▸ lastRepo ▸ first repo) — transient.
 type BootSettings = Settings & { currentRepo: string | null };
 
-const canvas     = document.getElementById("graph") as HTMLCanvasElement;
-const viewport   = document.getElementById("viewport") as HTMLElement;
-const statusEl   = document.getElementById("status") as HTMLElement;
-const searchEl   = document.getElementById("search") as HTMLInputElement;
-const branchSel  = document.getElementById("branch-select") as HTMLSelectElement;
+const canvas      = document.getElementById("graph") as HTMLCanvasElement;
+const viewport    = document.getElementById("viewport") as HTMLElement;
+const statusEl    = document.getElementById("status") as HTMLElement;
+const searchEl    = document.getElementById("search") as HTMLInputElement;
+const searchHideEl = document.getElementById("search-hide") as HTMLButtonElement;
+const branchSel   = document.getElementById("branch-select") as HTMLSelectElement;
+
+let filterHide = false;
 
 const renderer = new GraphRenderer(
   canvas,
@@ -235,6 +238,11 @@ async function boot(): Promise<void> {
   shortcutsEl.addEventListener("pointerdown", (e) => { if (e.target === shortcutsEl) shortcutsEl.hidden = true; });
 
   searchEl.addEventListener("input", applyFilter);
+  searchHideEl.addEventListener("click", () => {
+    filterHide = !filterHide;
+    searchHideEl.classList.toggle("active", filterHide);
+    applyFilter();
+  });
   searchEl.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
       searchEl.value = "";
@@ -315,6 +323,7 @@ function applyFilter(): void {
   const raw = searchEl.value.trim();
 
   if (!raw) {
+    searchHideEl.hidden = true;
     renderer.setFilter(null);
     const display: GraphView = fullView.hasUncommittedChanges
       ? { ...fullView, rows: [makeWipRow(fullView.rows[0]), ...fullView.rows] }
@@ -338,11 +347,22 @@ function applyFilter(): void {
     return;
   }
 
-  // Text search: dim non-matching rows in the graph to preserve structure.
+  // Text search: dim non-matching rows, or hide them when filterHide is on.
   const q = raw.toLowerCase();
   const matchSet = new Set(fullView.rows.filter(r => textMatchesSha(q, r)).map(r => r.sha));
-  renderer.setFilter(matchSet);
-  renderer.setView(fullView);
+  searchHideEl.hidden = false;
+  if (filterHide) {
+    const display: GraphView = {
+      rows: fullView.rows.filter(r => matchSet.has(r.sha)).map(r => ({ ...r, column: 0, edges: [] })),
+      width: 0,
+      truncated: fullView.truncated,
+    };
+    renderer.setFilter(null);
+    renderer.setView(display);
+  } else {
+    renderer.setFilter(matchSet);
+    renderer.setView(fullView);
+  }
   statusEl.textContent = `${matchSet.size} of ${fullView.rows.length} commits match`;
 }
 

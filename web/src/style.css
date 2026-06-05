@@ -64,6 +64,8 @@ button:hover { border-color: var(--accent); }
 }
 #search:focus { width: 280px; border-color: var(--accent); outline: none; }
 #search::-webkit-search-cancel-button { cursor: pointer; }
+#search-hide { padding: 2px 7px; flex: 0 0 auto; font-size: 11px; }
+#search-hide.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
 #add-repo { padding: 2px 8px; flex: 0 0 auto; white-space: nowrap; }
 
 #repo-list { margin-top: 6px; }
