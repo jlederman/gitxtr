@@ -18,6 +18,13 @@ public interface IRepositoryReader
     /// <summary>SHAs of commits (newest-first) that touched <paramref name="filePath"/>.</summary>
     IReadOnlyList<string> ReadCommitShasByPath(string repoPath, string filePath);
 
+    /// <summary>Commits (newest-first) that touched <paramref name="filePath"/>, with metadata.</summary>
+    IReadOnlyList<Commit> ReadFileHistory(string repoPath, string filePath);
+
+    /// <summary>Line-by-line blame for <paramref name="filePath"/> as of <paramref name="atSha"/>
+    /// (or HEAD when null).</summary>
+    FileBlame ReadBlame(string repoPath, string filePath, string? atSha = null);
+
     /// <summary>True if <paramref name="repoPath"/> is a valid git repository.</summary>
     bool IsValid(string repoPath);
 }

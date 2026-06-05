@@ -55,29 +55,85 @@ public sealed class LibGit2SharpRepositoryReader : IRepositoryReader
     public IReadOnlyList<string> ReadCommitShasByPath(string repoPath, string filePath)
     {
         using var repo = new Repository(repoPath);
+        var shaSet = new HashSet<string>();
+        foreach (var commit in QueryFileHistory(repo, filePath))
+            shaSet.Add(commit.Sha);
+        return shaSet.ToList();
+    }
 
-        // If the query is a bare filename (no directory separator), resolve it to full
-        // repo-relative paths by walking the HEAD tree so QueryBy finds the right history.
-        IEnumerable<string> pathsToSearch;
-        if (!filePath.Contains('/') && !filePath.Contains('\\'))
+    public IReadOnlyList<DomainCommit> ReadFileHistory(string repoPath, string filePath)
+    {
+        using var repo = new Repository(repoPath);
+        var bySha = new Dictionary<string, LibCommit>();
+        foreach (var commit in QueryFileHistory(repo, filePath))
+            bySha.TryAdd(commit.Sha, commit);
+
+        return bySha.Values
+            .OrderByDescending(c => c.Author?.When ?? DateTimeOffset.UnixEpoch)
+            .Select(Map)
+            .ToList();
+    }
+
+    private const int MaxBlameLines = 20_000;
+
+    public FileBlame ReadBlame(string repoPath, string filePath, string? atSha = null)
+    {
+        using var repo = new Repository(repoPath);
+
+        var start = atSha is { Length: > 0 } s
+            ? repo.Lookup<LibCommit>(s) ?? throw new ArgumentException($"commit {s} not found")
+            : repo.Head?.Tip ?? throw new InvalidOperationException("no HEAD to blame");
+
+        // Resolve a bare filename to a full repo-relative path within the target commit's tree.
+        string path = ResolvePaths(repo, filePath, start.Tree).FirstOrDefault() ?? filePath;
+
+        if (start[path]?.Target is not Blob blob)
+            throw new ArgumentException($"{path} not found in commit {start.Sha}");
+        if (blob.IsBinary)
+            throw new InvalidOperationException($"{path} is binary and cannot be blamed");
+
+        string[] contentLines = blob.GetContentText().Replace("\r\n", "\n").Split('\n');
+
+        var lines = new List<BlameLine>();
+        bool truncated = false;
+        foreach (var hunk in repo.Blame(path, new BlameOptions { StartingAt = start }))
         {
-            var headTree = repo.Head?.Tip?.Tree;
-            var found = headTree is not null
-                ? WalkTree(headTree, "")
-                      .Where(p => Path.GetFileName(p).Equals(filePath, StringComparison.OrdinalIgnoreCase))
-                      .ToList()
-                : [];
-            pathsToSearch = found.Count > 0 ? found : [filePath];
-        }
-        else
-        {
-            pathsToSearch = [filePath];
+            var c = hunk.FinalCommit;
+            for (int i = 0; i < hunk.LineCount; i++)
+            {
+                int lineNo = hunk.FinalStartLineNumber + i + 1; // FinalStartLineNumber is 0-based
+                if (lines.Count >= MaxBlameLines) { truncated = true; break; }
+                string text = lineNo - 1 < contentLines.Length ? contentLines[lineNo - 1] : "";
+                lines.Add(new BlameLine(
+                    lineNo, new CommitId(c.Sha), c.Author?.Name ?? string.Empty,
+                    c.Author?.When ?? DateTimeOffset.UnixEpoch, c.MessageShort ?? string.Empty, text));
+            }
+            if (truncated) break;
         }
 
-        // LibGit2Sharp's FileHistory has a bug with divergent multi-branch start points
-        // (KeyNotFoundException in internal dictionary). Query each unique tip separately
-        // and union the results to get full cross-branch coverage without triggering it.
-        var uniqueTips = repo.Branches
+        return new FileBlame(path, lines, truncated);
+    }
+
+    /// <summary>Resolves <paramref name="filePath"/> to full repo-relative paths. A bare filename
+    /// (no directory separator) is matched against <paramref name="tree"/> (defaulting to HEAD);
+    /// anything else is returned as-is.</summary>
+    private static IReadOnlyList<string> ResolvePaths(Repository repo, string filePath, Tree? tree = null)
+    {
+        if (filePath.Contains('/') || filePath.Contains('\\'))
+            return [filePath];
+
+        var searchTree = tree ?? repo.Head?.Tip?.Tree;
+        var found = searchTree is not null
+            ? WalkTree(searchTree, "")
+                  .Where(p => Path.GetFileName(p).Equals(filePath, StringComparison.OrdinalIgnoreCase))
+                  .ToList()
+            : [];
+        return found.Count > 0 ? found : [filePath];
+    }
+
+    /// <summary>Branch tips and HEAD, deduped by SHA.</summary>
+    private static IReadOnlyList<LibCommit> UniqueTips(Repository repo) =>
+        repo.Branches
             .Select(b => b.Tip)
             .OfType<LibCommit>()
             .Concat(repo.Head?.Tip is { } h ? [h] : [])
@@ -85,22 +141,23 @@ public sealed class LibGit2SharpRepositoryReader : IRepositoryReader
             .Select(g => g.First())
             .ToList();
 
-        if (uniqueTips.Count == 0) return [];
-
-        var shaSet = new HashSet<string>();
-        foreach (var tip in uniqueTips)
+    /// <summary>Commits touching <paramref name="filePath"/>, queried per-tip and unioned.
+    /// LibGit2Sharp's FileHistory throws KeyNotFoundException on divergent multi-branch start
+    /// points, so each unique tip is queried separately to get full cross-branch coverage.</summary>
+    private static IEnumerable<LibCommit> QueryFileHistory(Repository repo, string filePath)
+    {
+        var paths = ResolvePaths(repo, filePath);
+        foreach (var tip in UniqueTips(repo))
         {
             var filter = new CommitFilter
             {
                 IncludeReachableFrom = tip,
                 SortBy = CommitSortStrategies.Topological | CommitSortStrategies.Time,
             };
-            foreach (var path in pathsToSearch)
+            foreach (var path in paths)
                 foreach (var entry in repo.Commits.QueryBy(path, filter))
-                    shaSet.Add(entry.Commit.Sha);
+                    yield return entry.Commit;
         }
-
-        return shaSet.ToList();
     }
 
     private static IEnumerable<string> WalkTree(Tree tree, string prefix)
