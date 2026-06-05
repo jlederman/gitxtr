@@ -18,13 +18,21 @@ export function mockResponse(type: string, payload: Record<string, unknown>): un
   if (type === "loadGraph") return MOCK_GRAPH;
   if (type === "getCommitDetails") {
     const sha = String(payload.sha ?? "0000000");
+    const isMerge = sha.startsWith("49f97bd"); // the mock graph's merge commit
+    const parent = payload.parent;
+    const diff = !isMerge
+      ? "diff --git a/f.txt b/f.txt\n@@ -1,2 +1,3 @@\n a\n b\n+feat\n"
+      : parent === "combined"
+        ? "diff --cc f.txt\n@@@ -1,1 -1,1 +1,1 @@@\n- main\n -feature\n++resolved\n"
+        : `diff --git a/f.txt b/f.txt\n@@ -1,1 +1,1 @@\n-${parent === 1 ? "feature" : "main"}\n+resolved\n`;
     return {
       sha, shortSha: sha.slice(0, 7), author: "tester", email: "t@t.c",
       whenIso: "2026-06-02T19:36:36Z", message: "D: feature work\n\nMock commit body.",
       refs: [{ name: "feature", kind: "LocalBranch" }],
       files: [{ path: "f.txt", status: "Modified", added: 1, deleted: 0 }],
-      diff: "diff --git a/f.txt b/f.txt\n@@ -1,2 +1,3 @@\n a\n b\n+feat\n",
+      diff,
       diffTruncated: false,
+      parents: isMerge ? ["6f2bb2a", "0f00d15"] : ["6f2bb2a"],
     };
   }
   if (type === "getSettings")

@@ -8,7 +8,11 @@ interface Ref { name: string; kind: string; }
 interface CommitDetails {
   sha: string; shortSha: string; author: string; email: string; whenIso: string;
   message: string; refs: Ref[]; files: FileChange[]; diff: string; diffTruncated: boolean;
+  parents: string[];
 }
+
+// For a merge: which parent the shown diff is against — a 0-based index, or "combined".
+type ParentSel = number | "combined";
 
 const metaEl = () => document.getElementById("detail-meta") as HTMLElement;
 const filesEl = () => document.getElementById("detail-files") as HTMLElement;
@@ -18,6 +22,7 @@ const bodyEl = () => document.getElementById("diff-body") as HTMLElement; // dif
 let seq = 0;
 let diffMode: "unified" | "split" = "unified";
 let lastDetails: CommitDetails | null = null;
+let parentSel: ParentSel = 0; // current merge-parent selection for the shown commit
 let lastWipFiles: WorkingTreeFile[] | null = null;
 let selectedFileIdx = -1;
 let totalFiles = 0;
@@ -79,11 +84,18 @@ export function initDiffToolbar(initial: string, onChange: (mode: string) => voi
   );
 }
 
-export async function showCommit(sha: string): Promise<void> {
+export function showCommit(sha: string): Promise<void> {
+  // Fresh commit selection always starts on the first parent (combined is opt-in via the
+  // selector — a conflict-free merge's combined diff is empty and would look broken).
+  return loadDetails(sha, 0);
+}
+
+async function loadDetails(sha: string, parent: ParentSel): Promise<void> {
   const my = ++seq;
   lastWipFiles = null;
+  parentSel = parent;
   try {
-    const d = await request<CommitDetails>("getCommitDetails", { sha, repoPath: getCurrentRepo() });
+    const d = await request<CommitDetails>("getCommitDetails", { sha, repoPath: getCurrentRepo(), parent });
     if (my !== seq) return;
     lastDetails = d;
     renderMeta(d);
@@ -204,7 +216,30 @@ function renderMeta(d: CommitDetails): void {
     `<div>${chips}<span class="sha">${esc(d.sha)}</span></div>` +
     `<div class="who">${esc(d.author)} &lt;${esc(d.email)}&gt; <span class="when">· ${esc(when)}</span></div>` +
     `<div class="subject">${esc(subject)}</div>` +
-    (body ? `<div>${esc(body)}</div>` : "");
+    (body ? `<div>${esc(body)}</div>` : "") +
+    renderParentSelector(d);
+  wireParentSelector(d.sha);
+}
+
+// Merge commits only: pick which parent the diff is against, or a combined (--cc) diff.
+function renderParentSelector(d: CommitDetails): string {
+  if (d.parents.length < 2) return "";
+  const opt = (val: string, label: string) =>
+    `<option value="${val}"${String(parentSel) === val ? " selected" : ""}>${esc(label)}</option>`;
+  const options = d.parents
+    .map((p, i) => opt(String(i), `Parent ${i + 1} (${p})`))
+    .concat(opt("combined", "Combined (all parents)"))
+    .join("");
+  return `<div class="parent-sel">Diff against <select id="parent-select">${options}</select></div>`;
+}
+
+function wireParentSelector(sha: string): void {
+  const sel = document.getElementById("parent-select") as HTMLSelectElement | null;
+  if (!sel) return;
+  sel.addEventListener("change", () => {
+    const v: ParentSel = sel.value === "combined" ? "combined" : Number(sel.value);
+    void loadDetails(sha, v);
+  });
 }
 
 function statusInfo(status: string): { glyph: string; cls: string } {
@@ -250,7 +285,16 @@ function renderFiles(d: CommitDetails): void {
 }
 
 function renderDiff(d: CommitDetails): void {
-  const html = diffMode === "split" ? renderSplit(d.diff) : `<div class="diff-wrap">${renderUnified(d.diff, d.diffTruncated)}</div>`;
+  const combined = parentSel === "combined";
+  if (combined && !d.diff) {
+    bodyEl().innerHTML = `<div class="trunc">No combined changes — this merge resolved cleanly against all parents.</div>`;
+    bodyEl().scrollTop = 0;
+    return;
+  }
+  // Combined (--cc) diffs have a multi-column format the split renderer can't pair; force unified.
+  const html = (!combined && diffMode === "split")
+    ? renderSplit(d.diff)
+    : `<div class="diff-wrap">${renderUnified(d.diff, d.diffTruncated)}</div>`;
   bodyEl().innerHTML = html || `<div class="trunc">no textual diff</div>`;
   bodyEl().scrollTop = 0;
 }
@@ -262,7 +306,7 @@ export function renderUnified(diff: string, truncated = false): string {
   for (const line of lines) {
     let cls = "line";
     let attr = "";
-    if (line.startsWith("diff --git")) { attr = ` id="diffsec-${++sec}"`; cls = "line fhdr"; }
+    if (line.startsWith("diff --")) { attr = ` id="diffsec-${++sec}"`; cls = "line fhdr"; } // --git, --cc, --combined
     else if (line.startsWith("+++") || line.startsWith("---") || line.startsWith("index ")) cls = "line fhdr";
     else if (line.startsWith("@@")) cls = "line hunk";
     else if (line.startsWith("+")) cls = "line add";
