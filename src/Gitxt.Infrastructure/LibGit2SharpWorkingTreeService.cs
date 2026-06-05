@@ -97,6 +97,17 @@ public sealed class LibGit2SharpWorkingTreeService : IWorkingTreeService
         }
     }
 
+    public void DiscardAllUnstaged(string repoPath)
+    {
+        using var repo = new Repository(repoPath);
+        var paths = repo.RetrieveStatus(new StatusOptions { IncludeUntracked = false })
+            .Where(e => e.State.HasFlag(FileStatus.ModifiedInWorkdir) || e.State.HasFlag(FileStatus.DeletedFromWorkdir))
+            .Select(e => e.FilePath)
+            .ToList();
+        if (paths.Count > 0)
+            repo.CheckoutPaths("HEAD", paths, new CheckoutOptions { CheckoutModifiers = CheckoutModifiers.Force });
+    }
+
     public void StageAll(string repoPath)
     {
         using var repo = new Repository(repoPath);

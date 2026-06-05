@@ -14,10 +14,11 @@ internal sealed class WorkingTreeOpHandler(IWorkingTreeService workingTree, stri
 
         string op = ctx.Root.TryGetProperty("op", out var o) ? o.GetString() ?? "" : "";
 
-        if (op is "stageAll" or "unstageAll")
+        if (op is "stageAll" or "unstageAll" or "discardAll")
         {
-            if (op == "stageAll")   workingTree.StageAll(repoPath);
-            else                    workingTree.UnstageAll(repoPath);
+            if (op == "stageAll")       workingTree.StageAll(repoPath);
+            else if (op == "unstageAll") workingTree.UnstageAll(repoPath);
+            else                         workingTree.DiscardAllUnstaged(repoPath);
             return null;
         }
 

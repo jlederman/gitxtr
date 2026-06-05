@@ -138,7 +138,8 @@ function renderWipFiles(view: WorkingTreeView): void {
   }
   if (view.unstaged.length > 0) {
     html += `<div class="fhead">Unstaged changes` +
-      `<button class="fop-all" data-op="stageAll" title="Stage all">Stage all</button></div>`;
+      `<button class="fop-all" data-op="stageAll" title="Stage all">Stage all</button>` +
+      `<button class="fop-all discard" data-op="discardAll" title="Discard all unstaged">Discard all</button></div>`;
     const off = view.staged.length;
     html += view.unstaged.map((f, i) => wipFileItem(f, off + i)).join("");
   }
@@ -168,6 +169,7 @@ function renderWipFiles(view: WorkingTreeView): void {
 
 async function handleWipOp(op: string, filePath: string): Promise<void> {
   if (op === "discard" && !confirm(`Discard all changes to ${filePath}?`)) return;
+  if (op === "discardAll" && !confirm("Discard all unstaged changes? This cannot be undone.")) return;
   const repo = getCurrentRepo();
   if (!repo) return;
   try {
