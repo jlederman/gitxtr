@@ -53,6 +53,7 @@ button:hover { border-color: var(--accent); }
 }
 #open-settings { padding: 2px 10px; background: transparent; border-color: transparent; font-size: 19px; line-height: 1; flex: 0 0 auto; }
 #open-settings:hover { background: var(--surface2); border-color: var(--border); }
+#toggle-view { padding: 2px 8px; flex: 0 0 auto; font-size: 11px; }
 #open-shortcuts { margin-left: auto; padding: 2px 8px; background: transparent; border-color: transparent; flex: 0 0 auto; }
 #open-shortcuts:hover { background: var(--surface2); border-color: var(--border); }
 #repo-select { max-width: 220px; padding: 2px 6px; flex: 0 1 auto; min-width: 60px; }
@@ -434,3 +435,21 @@ canvas { position: absolute; inset: 0; display: block; }
 #commit-files-pane .citem.sel { background: var(--sel); }
 #commit-files-pane .fstat { width: 1.1em; text-align: center; font-weight: bold; flex: 0 0 auto; }
 #commit-files-pane .fpath { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── Simple view ─────────────────────────────────────────────────────────── */
+/* Hide header chrome — only title, toggle button, and status remain. */
+body.simple #repo-select,
+body.simple #branch-select,
+body.simple #add-repo,
+body.simple #search,
+body.simple #search-hide,
+body.simple #open-shortcuts,
+body.simple #open-settings { display: none; }
+
+/* Collapse detail panel: meta auto-height, no file list, no splitters, no toolbar. */
+body.simple #detail-top { flex: 0 0 auto; }
+body.simple #detail-meta { height: auto; max-height: 150px; }
+body.simple #msplit,
+body.simple #detail-files,
+body.simple #dsplit,
+body.simple #diff-toolbar { display: none; }
