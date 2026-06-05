@@ -59,6 +59,7 @@ function renderPatchString(patch: string): void {
   const html = diffMode === "split" ? renderSplit(patch) : `<div class="diff-wrap">${renderUnified(patch)}</div>`;
   bodyEl().innerHTML = html || `<div class="trunc">no textual diff</div>`;
   bodyEl().scrollTop = 0;
+  syncSplitScroll(bodyEl());
 }
 
 function esc(s: string): string {
@@ -297,6 +298,7 @@ function renderDiff(d: CommitDetails): void {
     : `<div class="diff-wrap">${renderUnified(d.diff, d.diffTruncated)}</div>`;
   bodyEl().innerHTML = html || `<div class="trunc">no textual diff</div>`;
   bodyEl().scrollTop = 0;
+  syncSplitScroll(bodyEl());
 }
 
 // ── Inline word-level diff (#9) ───────────────────────────────────────────
@@ -379,14 +381,24 @@ export function renderUnified(diff: string, truncated = false): string {
 
 // Side-by-side view: within each hunk, pair runs of removed/added lines (old left, new right);
 // context lines appear on both sides. Line numbers track the hunk's -old/+new counters.
+// Two independently-scrollable columns (old/new) sharing synchronised vertical scroll —
+// the VS Code / Git Extensions model. Headers are duplicated into both columns so the rows
+// stay aligned; the file-anchor id (#diffsec-N) lives on the left copy only.
 function renderSplit(diff: string): string {
   const lines = diff.length ? diff.split("\n") : [];
-  const out: string[] = [];
+  const L: string[] = [];
+  const R: string[] = [];
   let sec = -1;
   let oldLn = 0;
   let newLn = 0;
   let dels: { no: number; text: string }[] = [];
   let adds: { no: number; text: string }[] = [];
+
+  const hdr = (cls: string, text: string, id = "") => {
+    const e = esc(text);
+    L.push(`<div class="dhdr ${cls}"${id ? ` id="${id}"` : ""}>${e}</div>`);
+    R.push(`<div class="dhdr ${cls}">${e}</div>`);
+  };
 
   const flush = () => {
     const n = Math.max(dels.length, adds.length);
@@ -396,10 +408,8 @@ function renderSplit(diff: string): string {
       let lh = l ? esc(l.text) : "";
       let rh = r ? esc(r.text) : "";
       if (l && r) [lh, rh] = wordDiff(l.text, r.text); // modified pair → highlight changed words
-      out.push(srow(
-        l ? l.no : null, lh, l ? "del" : "blank",
-        r ? r.no : null, rh, r ? "add" : "blank",
-      ));
+      L.push(srow(l ? l.no : null, lh, l ? "del" : "blank"));
+      R.push(srow(r ? r.no : null, rh, r ? "add" : "blank"));
     }
     dels = [];
     adds = [];
@@ -408,15 +418,15 @@ function renderSplit(diff: string): string {
   for (const line of lines) {
     if (line.startsWith("diff --git")) {
       flush();
-      out.push(`<div class="dhdr fhdr" id="diffsec-${++sec}">${esc(line)}</div>`);
+      hdr("fhdr", line, `diffsec-${++sec}`);
     } else if (line.startsWith("+++") || line.startsWith("---") || line.startsWith("index ")) {
       flush();
-      out.push(`<div class="dhdr fhdr">${esc(line)}</div>`);
+      hdr("fhdr", line);
     } else if (line.startsWith("@@")) {
       flush();
       const m = /@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/.exec(line);
       if (m) { oldLn = parseInt(m[1], 10); newLn = parseInt(m[2], 10); }
-      out.push(`<div class="dhdr hunk">${esc(line)}</div>`);
+      hdr("hunk", line);
     } else if (line.startsWith("-")) {
       dels.push({ no: oldLn++, text: line.slice(1) });
     } else if (line.startsWith("+")) {
@@ -424,21 +434,41 @@ function renderSplit(diff: string): string {
     } else {
       flush();
       const text = esc(line.startsWith(" ") ? line.slice(1) : line);
-      out.push(srow(oldLn, text, "ctx", newLn, text, "ctx"));
+      L.push(srow(oldLn, text, "ctx"));
+      R.push(srow(newLn, text, "ctx"));
       oldLn++;
       newLn++;
     }
   }
   flush();
-  return out.join("");
+  return `<div class="split2">` +
+    `<div class="split-col"><div class="col-inner">${L.join("")}</div></div>` +
+    `<div class="split-col"><div class="col-inner">${R.join("")}</div></div>` +
+    `</div>`;
 }
 
-// Content args are pre-escaped HTML (callers escape, and may inject word-diff spans).
-function srow(lno: number | null, lhtml: string, lcls: string, rno: number | null, rhtml: string, rcls: string): string {
-  return `<div class="srow">` +
-    `<span class="lno">${lno ?? ""}</span><span class="lc ${lcls}">${lhtml || "&nbsp;"}</span>` +
-    `<span class="rno">${rno ?? ""}</span><span class="rc ${rcls}">${rhtml || "&nbsp;"}</span>` +
-    `</div>`;
+// One side of a split row. Content is pre-escaped HTML (may carry word-diff spans).
+function srow(lno: number | null, html: string, cls: string): string {
+  return `<div class="srow2"><span class="lno">${lno ?? ""}</span>` +
+    `<span class="lc ${cls}">${html || "&nbsp;"}</span></div>`;
+}
+
+// Mirror vertical scroll between the two split columns (horizontal stays independent).
+// No-op for unified diffs. Re-run after each render — innerHTML replacement drops listeners.
+function syncSplitScroll(container: HTMLElement): void {
+  const cols = container.querySelectorAll<HTMLElement>(".split-col");
+  if (cols.length !== 2) return;
+  const [a, b] = [cols[0], cols[1]];
+  let lock = false;
+  const link = (src: HTMLElement, dst: HTMLElement) =>
+    src.addEventListener("scroll", () => {
+      if (lock) return;
+      lock = true;
+      dst.scrollTop = src.scrollTop;
+      lock = false;
+    });
+  link(a, b);
+  link(b, a);
 }
 
 export function initDetailContextMenus(): void {

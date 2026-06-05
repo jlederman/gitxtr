@@ -222,15 +222,18 @@ canvas { position: absolute; inset: 0; display: block; }
 /* inline word-level diff: stronger highlight on the changed tokens within a line */
 .diff-pane .wd-del { background: rgba(243,139,168,0.30); background: color-mix(in srgb, var(--del-fg) 30%, transparent); border-radius: 2px; }
 .diff-pane .wd-add { background: rgba(166,227,161,0.30); background: color-mix(in srgb, var(--add-fg) 30%, transparent); border-radius: 2px; }
-/* split (side-by-side) view */
-.diff-pane .srow { display: grid; grid-template-columns: 3.5em 1fr 3.5em 1fr; }
-.diff-pane .srow .lno, .diff-pane .srow .rno { color: var(--muted); text-align: right; padding: 0 6px; user-select: none; }
-.diff-pane .srow .rno { border-left: 1px solid var(--border); }
-.diff-pane .srow .lc, .diff-pane .srow .rc { padding: 0 6px; overflow: hidden; }
-.diff-pane .srow .del { background: var(--del-bg); color: var(--del-fg); }
-.diff-pane .srow .add { background: var(--add-bg); color: var(--add-fg); }
-.diff-pane .srow .ctx { color: var(--fg); }
-.diff-pane .srow .blank { background: rgba(127,127,127,0.05); }
+/* split (side-by-side) view: two independently-scrollable columns, vertical scroll synced via JS */
+.diff-pane .split2 { display: flex; height: 100%; }
+.diff-pane .split-col { flex: 1 1 50%; min-width: 0; overflow: auto; }
+.diff-pane .split-col + .split-col { border-left: 1px solid var(--border); }
+.diff-pane .col-inner { min-width: max-content; }
+.diff-pane .srow2 { display: flex; }
+.diff-pane .srow2 .lno { flex: 0 0 3.5em; text-align: right; padding: 0 6px; position: sticky; left: 0; background: var(--bg); color: var(--muted); user-select: none; }
+.diff-pane .srow2 .lc { flex: 1 0 auto; padding: 0 6px; }
+.diff-pane .srow2 .del { background: var(--del-bg); color: var(--del-fg); }
+.diff-pane .srow2 .add { background: var(--add-bg); color: var(--add-fg); }
+.diff-pane .srow2 .ctx { color: var(--fg); }
+.diff-pane .srow2 .blank { background: rgba(127,127,127,0.05); }
 .diff-pane .dhdr { padding: 0 12px; }
 .diff-pane .dhdr.fhdr { color: var(--fhdr); }
 .diff-pane .dhdr.hunk { color: var(--hunk); }
