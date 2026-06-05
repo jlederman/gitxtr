@@ -42,3 +42,27 @@ export interface WorkingTreeView {
   unstaged: WorkingTreeFile[];
   lastCommitMessage: string;
 }
+
+export interface FileHistoryCommit {
+  sha: string;
+  shortSha: string;
+  summary: string;
+  author: string;
+  whenIso: string;
+}
+
+export interface BlameLine {
+  lineNumber: number;
+  sha: string;
+  shortSha: string;
+  author: string;
+  whenIso: string;
+  summary: string;
+  content: string;
+}
+
+export interface FileBlame {
+  path: string;
+  lines: BlameLine[];
+  truncated: boolean;
+}

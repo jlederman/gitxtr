@@ -340,7 +340,11 @@ export function initDetailContextMenus(): void {
     const item = (e.target as HTMLElement).closest<HTMLElement>(".fitem[data-idx]");
     if (!item) return;
     showContextMenu(
-      [{ label: "Copy path", action: "copy-path" }],
+      [
+        { label: "File history", action: "file-history" },
+        { label: "Blame",        action: "blame" },
+        { label: "Copy path",    action: "copy-path" },
+      ],
       { kind: "file", path: item.title },
       e.clientX, e.clientY,
     );

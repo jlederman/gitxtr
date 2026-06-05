@@ -67,6 +67,14 @@ export class GraphRenderer {
     this.viewport.focus({ preventScroll: true });
   }
 
+  /// Selects the row with the given SHA (scrolling it into view), returning false if not present.
+  selectBySha(sha: string): boolean {
+    const i = this.view.rows.findIndex(r => r.sha === sha);
+    if (i < 0) return false;
+    this.select(i);
+    return true;
+  }
+
   setTheme(theme: Theme): void {
     this.theme = theme;
     this.draw();

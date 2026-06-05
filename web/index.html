@@ -158,6 +158,28 @@
       </div>
     </div>
 
+    <div id="fh-modal" hidden>
+      <div id="fh-card">
+        <div id="fh-hdr">
+          <span class="title">File history</span>
+          <span id="fh-path"></span>
+          <div id="fh-tabs">
+            <button data-tab="history">History</button>
+            <button data-tab="blame">Blame</button>
+          </div>
+          <button id="fh-modal-close" title="Close (Esc)">×</button>
+        </div>
+        <div id="fh-workspace">
+          <div id="fh-list" tabindex="0"></div>
+          <div id="fh-detail" class="diff-pane"></div>
+        </div>
+        <div id="fh-footer">
+          <span id="fh-hint"></span>
+          <button id="fh-goto-btn">Show in graph</button>
+        </div>
+      </div>
+    </div>
+
     <div id="ctx-menu" hidden></div>
 
     <script type="module" src="/src/main.ts"></script>
