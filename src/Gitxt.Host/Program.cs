@@ -19,6 +19,7 @@ var reader        = new LibGit2SharpRepositoryReader();
 var service       = new GraphQueryService(reader, new GraphLayoutEngine());
 var workingTree   = new LibGit2SharpWorkingTreeService();
 var branches      = new LibGit2SharpBranchService();
+var remotes       = new GitProcessRemoteService();
 var settingsStore = new JsonSettingsStore(loggerFactory.CreateLogger<JsonSettingsStore>());
 var gitConfig     = new LibGit2SharpGitConfigService(loggerFactory.CreateLogger<LibGit2SharpGitConfigService>());
 
@@ -89,6 +90,8 @@ var dispatcher = new MessageDispatcher(
         ["interactiveRebase"] = new InteractiveRebaseHandler(workingTree, fallbackRepo),
         ["branchOp"]         = new BranchOpHandler(branches, fallbackRepo),
         ["getBranches"]      = new GetBranchesHandler(branches, fallbackRepo),
+        ["remoteOp"]         = new RemoteOpHandler(remotes, fallbackRepo),
+        ["getRemotes"]       = new GetRemotesHandler(remotes, fallbackRepo),
     },
     jsonOpts,
     loggerFactory.CreateLogger<MessageDispatcher>());
@@ -105,8 +108,16 @@ window = new PhotinoWindow()
     .Center()
     .RegisterWebMessageReceivedHandler((sender, message) =>
     {
+        // Handle off the UI thread: git/network ops would otherwise block the WebKit
+        // thread that repaints the webview, freezing the window. The bridge correlates
+        // responses by id, so out-of-order replies are fine. SendWebMessage must run on
+        // the UI thread, so post the result back via Invoke.
         var w = (PhotinoWindow)sender!;
-        w.SendWebMessage(dispatcher.Dispatch(w, message));
+        Task.Run(() =>
+        {
+            string response = dispatcher.Dispatch(w, message);
+            w.Invoke(() => w.SendWebMessage(response));
+        });
     })
     .Load(string.IsNullOrEmpty(devUrl) ? indexPath : devUrl);
 
