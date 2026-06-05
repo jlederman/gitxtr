@@ -205,6 +205,7 @@ canvas { position: absolute; inset: 0; display: block; }
   color: var(--muted); font-size: 11px; cursor: pointer;
 }
 .fop-all:hover { background: var(--surface2); color: var(--fg); }
+.fop-all.discard:hover { color: var(--del-fg); border-color: var(--del-fg); }
 .diff-wrap { min-width: max-content; }
 .diff-pane .line { padding: 0 12px; }
 .diff-pane .add { background: var(--add-bg); color: var(--add-fg); }
