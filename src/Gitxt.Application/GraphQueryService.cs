@@ -17,7 +17,8 @@ public sealed record GraphView(IReadOnlyList<RowDto> Rows, int Width, bool Trunc
 public sealed record FileChangeDto(string Path, string Status, int Added, int Deleted);
 public sealed record CommitDetailsDto(
     string Sha, string ShortSha, string Author, string Email, string WhenIso, string Message,
-    IReadOnlyList<RefDto> Refs, IReadOnlyList<FileChangeDto> Files, string Diff, bool DiffTruncated);
+    IReadOnlyList<RefDto> Refs, IReadOnlyList<FileChangeDto> Files, string Diff, bool DiffTruncated,
+    IReadOnlyList<string> Parents);
 
 public sealed record FileHistoryDto(
     string Sha, string ShortSha, string Summary, string Author, string WhenIso);
@@ -28,7 +29,7 @@ public sealed record FileBlameDto(string Path, IReadOnlyList<BlameLineDto> Lines
 public interface IGraphQueryService
 {
     GraphView GetGraph(string repoPath, int? limit = null);
-    CommitDetailsDto GetCommitDetails(string repoPath, string sha);
+    CommitDetailsDto GetCommitDetails(string repoPath, string sha, int parentIndex = 0, bool combined = false);
     IReadOnlyList<FileHistoryDto> GetFileHistory(string repoPath, string filePath);
     FileBlameDto GetBlame(string repoPath, string filePath, string? atSha = null);
 }
@@ -61,9 +62,9 @@ public sealed class GraphQueryService(IRepositoryReader reader, GraphLayoutEngin
         return new GraphView(rows, layout.Width, truncated);
     }
 
-    public CommitDetailsDto GetCommitDetails(string repoPath, string sha)
+    public CommitDetailsDto GetCommitDetails(string repoPath, string sha, int parentIndex = 0, bool combined = false)
     {
-        var d = reader.ReadCommitDetail(repoPath, new CommitId(sha));
+        var d = reader.ReadCommitDetail(repoPath, new CommitId(sha), parentIndex, combined);
         var refs = reader.ReadRefs(repoPath)
             .Where(r => r.Target.Sha == d.Id.Sha)
             .Select(r => new RefDto(r.Name, r.Kind.ToString()))
@@ -73,7 +74,7 @@ public sealed class GraphQueryService(IRepositoryReader reader, GraphLayoutEngin
             d.Id.Sha, d.Id.Short, d.Author, d.Email, d.WhenUtc.ToString("o"), d.Message,
             refs,
             d.Files.Select(f => new FileChangeDto(f.Path, f.ChangeKind, f.Added, f.Deleted)).ToList(),
-            d.UnifiedDiff, d.DiffTruncated);
+            d.UnifiedDiff, d.DiffTruncated, d.ParentShas);
     }
 
     public IReadOnlyList<FileHistoryDto> GetFileHistory(string repoPath, string filePath) =>

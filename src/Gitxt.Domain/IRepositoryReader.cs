@@ -12,8 +12,10 @@ public interface IRepositoryReader
     /// <summary>Branch tips, tags, and HEAD.</summary>
     IReadOnlyList<GitRef> ReadRefs(string repoPath);
 
-    /// <summary>Metadata, changed files, and the unified diff for a single commit.</summary>
-    CommitDetail ReadCommitDetail(string repoPath, CommitId id);
+    /// <summary>Metadata, changed files, and the unified diff for a single commit. For a merge,
+    /// <paramref name="parentIndex"/> selects which parent to diff against; <paramref name="combined"/>
+    /// instead produces a combined diff against all parents (git --cc).</summary>
+    CommitDetail ReadCommitDetail(string repoPath, CommitId id, int parentIndex = 0, bool combined = false);
 
     /// <summary>SHAs of commits (newest-first) that touched <paramref name="filePath"/>.</summary>
     IReadOnlyList<string> ReadCommitShasByPath(string repoPath, string filePath);

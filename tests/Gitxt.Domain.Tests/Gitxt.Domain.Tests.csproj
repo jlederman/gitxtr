@@ -20,6 +20,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Gitxt.Domain\Gitxt.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Gitxt.Application\Gitxt.Application.csproj" />
+    <ProjectReference Include="..\..\src\Gitxt.Infrastructure\Gitxt.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

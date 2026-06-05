@@ -182,20 +182,35 @@ public sealed class LibGit2SharpRepositoryReader : IRepositoryReader
 
     private const int MaxDiffChars = 200_000;
 
-    public CommitDetail ReadCommitDetail(string repoPath, CommitId id)
+    public CommitDetail ReadCommitDetail(string repoPath, CommitId id, int parentIndex = 0, bool combined = false)
     {
         using var repo = new Repository(repoPath);
         var commit = repo.Lookup<LibCommit>(id.Sha)
             ?? throw new ArgumentException($"commit {id.Sha} not found");
 
-        var parentTree = commit.Parents.FirstOrDefault()?.Tree; // null => root, diffs vs empty tree
-        using var patch = repo.Diff.Compare<Patch>(parentTree, commit.Tree);
+        var parents = commit.Parents.ToList();
+        var parentShas = parents.Select(p => p.Sha[..7]).ToList();
 
-        var files = patch
-            .Select(p => new FileChange(p.Path, p.Status.ToString(), p.LinesAdded, p.LinesDeleted))
-            .ToList();
+        List<FileChange> files;
+        string content;
 
-        string content = patch.Content;
+        if (combined && parents.Count >= 2)
+        {
+            // LibGit2Sharp can't produce a combined (--cc) diff; shell out to git.
+            content = ReadCombinedDiff(repoPath, commit.Sha);
+            files = ParseCombinedFiles(content);
+        }
+        else
+        {
+            int idx = parentIndex >= 0 && parentIndex < parents.Count ? parentIndex : 0;
+            var parentTree = parents.Count > 0 ? parents[idx].Tree : null; // null => root, vs empty tree
+            using var patch = repo.Diff.Compare<Patch>(parentTree, commit.Tree);
+            files = patch
+                .Select(p => new FileChange(p.Path, p.Status.ToString(), p.LinesAdded, p.LinesDeleted))
+                .ToList();
+            content = patch.Content;
+        }
+
         bool truncated = content.Length > MaxDiffChars;
         if (truncated) content = content[..MaxDiffChars];
 
@@ -207,7 +222,34 @@ public sealed class LibGit2SharpRepositoryReader : IRepositoryReader
             commit.Message ?? string.Empty,
             files,
             content,
-            truncated);
+            truncated,
+            parentShas);
+    }
+
+    // Combined merge diff via `git show --cc` (empty --pretty drops the commit header).
+    // A conflict-free merge yields an empty combined diff — that's expected, not an error.
+    private static string ReadCombinedDiff(string repoPath, string sha)
+    {
+        var (code, stdout, stderr) = GitCli.Run(
+            repoPath, "show", "--cc", "--no-color", "--pretty=format:", sha);
+        if (code != 0)
+            throw new InvalidOperationException(stderr.Length > 0 ? stderr : "git show --cc failed");
+        return stdout.TrimStart('\n');
+    }
+
+    // Combined diff headers look like "diff --cc <path>" / "diff --combined <path>".
+    // Line counts aren't meaningful for a combined diff, so report them as zero.
+    private static List<FileChange> ParseCombinedFiles(string diff)
+    {
+        var files = new List<FileChange>();
+        foreach (var line in diff.Split('\n'))
+        {
+            if (line.StartsWith("diff --cc ", StringComparison.Ordinal))
+                files.Add(new FileChange(line["diff --cc ".Length..], "Modified", 0, 0));
+            else if (line.StartsWith("diff --combined ", StringComparison.Ordinal))
+                files.Add(new FileChange(line["diff --combined ".Length..], "Modified", 0, 0));
+        }
+        return files;
     }
 
     private static DomainCommit Map(LibCommit c) =>
