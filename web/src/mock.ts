@@ -35,5 +35,10 @@ export function mockResponse(type: string, payload: Record<string, unknown>): un
   if (type === "getGitIdentity")
     return { globalName: "Mock User", globalEmail: "mock@example.com", localName: null, localEmail: null };
   if (type === "setGitIdentity") return {};
+  if (type === "getBranches")
+    return [{ name: "main", isHead: true, upstreamName: "origin/main" }, { name: "feature", isHead: false, upstreamName: null }];
+  if (type === "getRemotes")
+    return [{ name: "origin", url: "https://github.com/example/repo.git" }];
+  if (type === "remoteOp") return { output: "Already up to date." };
   throw new Error(`no mock for request type '${type}'`);
 }

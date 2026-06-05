@@ -350,6 +350,67 @@ canvas { position: absolute; inset: 0; display: block; }
 }
 #do-rebase-btn:hover { filter: brightness(1.15); }
 
+/* ── Remote modal (fetch / pull / push) ─────────────────────────────────── */
+.remote-btn { padding: 2px 8px; flex: 0 0 auto; font-size: 11px; }
+#remote-modal {
+  position: fixed; inset: 0; z-index: 50;
+  background: rgba(0,0,0,0.55);
+  display: flex; align-items: center; justify-content: center;
+}
+#remote-modal[hidden] { display: none; }
+#remote-card {
+  width: min(460px, 92vw);
+  background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+  display: flex; flex-direction: column; overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+}
+#remote-hdr {
+  flex: 0 0 auto; padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center;
+}
+#remote-hdr .title { color: var(--accent); font-weight: bold; flex: 1; }
+#remote-modal-close { background: transparent; border: none; color: var(--muted); font-size: 18px; cursor: pointer; padding: 0 4px; }
+#remote-modal-close:hover { color: var(--fg); }
+#remote-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
+.rf-row { display: flex; align-items: center; gap: 12px; }
+.rf-row[hidden], .rf-check[hidden] { display: none; }
+.rf-label { flex: 0 0 70px; color: var(--muted); font-size: 12px; }
+.rf-row select { flex: 1 1 auto; padding: 3px 6px; }
+.rf-radios { display: flex; gap: 16px; }
+.rf-radios label, .rf-check {
+  display: flex; align-items: center; gap: 6px;
+  font-size: var(--font-size); cursor: pointer;
+}
+.rf-check input, .rf-radios input { margin: 0; }
+#remote-output {
+  margin: 2px 0 0; max-height: 180px; overflow: auto;
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 4px;
+  padding: 8px 10px; font-size: 11px; line-height: 1.45; color: var(--fg);
+  white-space: pre-wrap; word-break: break-word;
+  font-family: ui-monospace, monospace;
+}
+#remote-output[hidden] { display: none; }
+#remote-output.err { color: var(--del-fg); }
+#remote-footer {
+  flex: 0 0 auto; padding: 10px 14px;
+  border-top: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+#remote-msg {
+  flex: 1; font-size: 11px; color: var(--muted);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+#remote-msg.err { color: var(--del-fg); }
+#remote-cancel-btn { padding: 4px 14px; }
+#do-remote-btn {
+  padding: 4px 18px;
+  background: var(--accent); border: none; border-radius: 4px;
+  color: var(--bg); font-size: var(--font-size); cursor: pointer;
+}
+#do-remote-btn:hover:not(:disabled) { filter: brightness(1.15); }
+#do-remote-btn:disabled { opacity: 0.5; cursor: default; }
+
 /* ── File history / blame modal ─────────────────────────────────────────── */
 #fh-modal {
   position: fixed; inset: 0; z-index: 50;

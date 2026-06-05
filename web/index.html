@@ -11,6 +11,9 @@
       <select id="repo-select" title="Switch repository"></select>
       <select id="branch-select" title="Switch branch"></select>
       <button id="add-repo" title="Add a repository">+ Repo</button>
+      <button id="btn-fetch" class="remote-btn" title="Fetch from remote" hidden>Fetch</button>
+      <button id="btn-pull" class="remote-btn" title="Pull from remote" hidden>Pull</button>
+      <button id="btn-push" class="remote-btn" title="Push to remote" hidden>Push</button>
       <input id="search" type="search" placeholder="Filter commits…" autocomplete="off" spellcheck="false" />
       <button id="search-hide" title="Hide non-matching commits" hidden>Hide</button>
       <span id="status"></span>
@@ -154,6 +157,41 @@
           <span id="rebase-err"></span>
           <button id="rebase-cancel-btn">Cancel</button>
           <button id="do-rebase-btn">Rebase</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="remote-modal" hidden>
+      <div id="remote-card">
+        <div id="remote-hdr">
+          <span class="title" id="remote-title">Remote</span>
+          <button id="remote-modal-close" title="Close (Esc)">×</button>
+        </div>
+        <div id="remote-body">
+          <label class="rf-row" id="rf-remote-row">
+            <span class="rf-label">Remote</span>
+            <select id="rf-remote"></select>
+          </label>
+          <label class="rf-row" id="rf-branch-row">
+            <span class="rf-label">Branch</span>
+            <select id="rf-branch"></select>
+          </label>
+          <div class="rf-row" id="rf-mode-row">
+            <span class="rf-label">Mode</span>
+            <span class="rf-radios">
+              <label><input type="radio" name="rf-pullmode" value="merge" checked /> Merge</label>
+              <label><input type="radio" name="rf-pullmode" value="rebase" /> Rebase</label>
+            </span>
+          </div>
+          <label class="rf-check" id="rf-prune-row"><input type="checkbox" id="rf-prune" /> Prune deleted remote branches</label>
+          <label class="rf-check" id="rf-force-row"><input type="checkbox" id="rf-force" /> Force (with lease)</label>
+          <label class="rf-check" id="rf-upstream-row"><input type="checkbox" id="rf-upstream" /> Set as upstream</label>
+          <pre id="remote-output" hidden></pre>
+        </div>
+        <div id="remote-footer">
+          <span id="remote-msg"></span>
+          <button id="remote-cancel-btn">Cancel</button>
+          <button id="do-remote-btn">Go</button>
         </div>
       </div>
     </div>

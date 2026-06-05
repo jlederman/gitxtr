@@ -4,6 +4,7 @@ import { GraphRenderer } from "./graphRenderer";
 import { showCommit, showWorkingTree, initDiffToolbar, initFileNav, initDetailContextMenus } from "./detail";
 import { initCommitModal, openCommitModal } from "./commitModal";
 import { initRebaseModal, openRebaseModal } from "./rebaseModal";
+import { initRemoteModal, openRemoteModal, type RemoteMode } from "./remoteModal";
 import { initFileHistory, openFileHistory } from "./fileHistory";
 import { initSettings, applyAppearance, type Settings } from "./settings";
 import { initSplitter } from "./splitter";
@@ -20,8 +21,10 @@ const statusEl    = document.getElementById("status") as HTMLElement;
 const searchEl    = document.getElementById("search") as HTMLInputElement;
 const searchHideEl = document.getElementById("search-hide") as HTMLButtonElement;
 const branchSel   = document.getElementById("branch-select") as HTMLSelectElement;
+const remoteBtns  = ["btn-fetch", "btn-pull", "btn-push"].map(id => document.getElementById(id) as HTMLButtonElement);
 
 let filterHide = false;
+let branchList: { name: string; isHead: boolean; upstreamName?: string | null }[] = [];
 let viewMode: "simple" | "complex" = "complex";
 
 function applyViewMode(mode: "simple" | "complex"): void {
@@ -193,6 +196,12 @@ async function boot(): Promise<void> {
   initFileNav();
   initCommitModal();
   initRebaseModal();
+  initRemoteModal();
+  const modes: RemoteMode[] = ["fetch", "pull", "push"];
+  remoteBtns.forEach((btn, i) => btn.addEventListener("click", () => {
+    const repo = getCurrentRepo();
+    if (repo) openRemoteModal(modes[i], { repo, branches: branchList, onDone: () => void loadGraph(repo) });
+  }));
   initFileHistory((sha) => {
     if (!renderer.selectBySha(sha)) statusEl.textContent = `commit ${sha.slice(0, 7)} is not in the loaded graph`;
     renderer.focus();
@@ -514,7 +523,8 @@ async function loadGraph(repo: string): Promise<void> {
 
 async function loadBranches(repo: string): Promise<void> {
   try {
-    const list = await request<{ name: string; isHead: boolean }[]>("getBranches", { repoPath: repo });
+    const list = await request<{ name: string; isHead: boolean; upstreamName?: string | null }[]>("getBranches", { repoPath: repo });
+    branchList = list;
     const hasCurrent = list.some(b => b.isHead);
     branchSel.innerHTML =
       (!hasCurrent ? '<option value="" disabled selected>(detached HEAD)</option>' : "") +
@@ -522,8 +532,10 @@ async function loadBranches(repo: string): Promise<void> {
         `<option value="${esc(b.name)}"${b.isHead ? " selected" : ""}>${esc(b.name)}</option>`
       ).join("");
     branchSel.hidden = false;
+    remoteBtns.forEach(b => b.hidden = false);
   } catch {
     branchSel.hidden = true;
+    remoteBtns.forEach(b => b.hidden = true);
   }
 }
 
@@ -532,6 +544,8 @@ function showEmpty(): void {
   statusEl.textContent = 'No repository — click "+ Repo" to add one';
   branchSel.hidden = true;
   branchSel.innerHTML = "";
+  branchList = [];
+  remoteBtns.forEach(b => b.hidden = true);
 }
 
 void boot();
