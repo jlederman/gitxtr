@@ -7,6 +7,11 @@ using Gitxt.Host.Messaging.Handlers;
 using Gitxt.Infrastructure;
 using Microsoft.Extensions.Logging;
 using Photino.NET;
+using Velopack;
+
+// Velopack hooks (install/update/uninstall) re-launch this exe with special args and exit;
+// this MUST run before any other startup work. No-op for a normal, non-Velopack launch.
+VelopackApp.Build().Run();
 
 // Route all our log output to stderr so it survives the stdout suppression below.
 // Gitxt.* logs at Debug; everything else (framework, Photino internals) at Warning.
@@ -120,6 +125,11 @@ window = new PhotinoWindow()
         });
     })
     .Load(string.IsNullOrEmpty(devUrl) ? indexPath : devUrl);
+
+// Check GitHub Releases for a newer build in the background and stage it to apply on next
+// launch (no mid-session restart). Skipped in dev and when not installed via Velopack.
+if (string.IsNullOrEmpty(devUrl))
+    _ = Updater.CheckInBackgroundAsync(loggerFactory.CreateLogger("Updater"));
 
 window.WaitForClose();
 return 0;
