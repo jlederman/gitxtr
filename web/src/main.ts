@@ -4,6 +4,7 @@ import { GraphRenderer } from "./graphRenderer";
 import { showCommit, showWorkingTree, initDiffToolbar, initFileNav, initDetailContextMenus } from "./detail";
 import { initCommitModal, openCommitModal } from "./commitModal";
 import { initRebaseModal, openRebaseModal } from "./rebaseModal";
+import { initFileHistory, openFileHistory } from "./fileHistory";
 import { initSettings, applyAppearance, type Settings } from "./settings";
 import { initSplitter } from "./splitter";
 import { initRepos, getCurrentRepo } from "./repos";
@@ -192,6 +193,10 @@ async function boot(): Promise<void> {
   initFileNav();
   initCommitModal();
   initRebaseModal();
+  initFileHistory((sha) => {
+    if (!renderer.selectBySha(sha)) statusEl.textContent = `commit ${sha.slice(0, 7)} is not in the loaded graph`;
+    renderer.focus();
+  });
 
   initContextMenu((action, payload) => {
     if (viewMode === "simple") return;
@@ -232,7 +237,10 @@ async function boot(): Promise<void> {
         }
       }
     } else if (p.kind === "file") {
-      if (action === "copy-path") void navigator.clipboard.writeText(p.path as string);
+      const path = p.path as string;
+      if (action === "copy-path") void navigator.clipboard.writeText(path);
+      else if (action === "file-history") void openFileHistory(path, "history");
+      else if (action === "blame") void openFileHistory(path, "blame");
     } else if (p.kind === "diff-line") {
       if (action === "copy-line") void navigator.clipboard.writeText(p.text as string);
     }
@@ -360,6 +368,17 @@ function applyFilter(): void {
       : fullView;
     renderer.setView(display);
     statusEl.textContent = `${fullView.rows.length} commits${fullView.truncated ? " (truncated)" : ""}`;
+    return;
+  }
+
+  if (raw.startsWith("blame:") || raw.startsWith("history:")) {
+    const isBlame = raw.startsWith("blame:");
+    const filePath = raw.slice(isBlame ? 6 : 8).trim();
+    if (filePath) {
+      void openFileHistory(filePath, isBlame ? "blame" : "history");
+      searchEl.value = "";
+      applyFilter(); // restore the unfiltered graph behind the modal
+    }
     return;
   }
 
