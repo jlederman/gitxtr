@@ -347,6 +347,16 @@ function applyFilter(): void {
     return;
   }
 
+  // Auto-detect file paths: queries containing "/" or ending with a file extension
+  // (e.g. "health.ts", "src/api/health.ts") are routed to path search automatically.
+  // Require the char after "." to be a letter so dates like "2024-01-15" don't match.
+  if (raw.includes("/") || /\.[a-zA-Z]\w{0,5}$/.test(raw)) {
+    const repo = getCurrentRepo();
+    if (!repo) return;
+    void applyPathFilter(repo, raw);
+    return;
+  }
+
   // Text search: dim non-matching rows, or hide them when filterHide is on.
   const q = raw.toLowerCase();
   const matchSet = new Set(fullView.rows.filter(r => textMatchesSha(q, r)).map(r => r.sha));

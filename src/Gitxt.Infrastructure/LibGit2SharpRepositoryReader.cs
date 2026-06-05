@@ -68,9 +68,47 @@ public sealed class LibGit2SharpRepositoryReader : IRepositoryReader
             SortBy = CommitSortStrategies.Topological | CommitSortStrategies.Time,
         };
 
-        return repo.Commits.QueryBy(filePath, filter)
-            .Select(entry => entry.Commit.Sha)
-            .ToList();
+        // If the query is a bare filename (no directory separator), resolve it to full
+        // repo-relative paths by walking the HEAD tree so QueryBy finds the right history.
+        IEnumerable<string> pathsToSearch;
+        if (!filePath.Contains('/') && !filePath.Contains('\\'))
+        {
+            var headTree = repo.Head?.Tip?.Tree;
+            var found = headTree is not null
+                ? WalkTree(headTree, "")
+                      .Where(p => Path.GetFileName(p).Equals(filePath, StringComparison.OrdinalIgnoreCase))
+                      .ToList()
+                : [];
+            pathsToSearch = found.Count > 0 ? found : [filePath];
+        }
+        else
+        {
+            pathsToSearch = [filePath];
+        }
+
+        var shaSet = new HashSet<string>();
+        foreach (var path in pathsToSearch)
+            foreach (var entry in repo.Commits.QueryBy(path, filter))
+                shaSet.Add(entry.Commit.Sha);
+
+        return shaSet.ToList();
+    }
+
+    private static IEnumerable<string> WalkTree(Tree tree, string prefix)
+    {
+        foreach (var entry in tree)
+        {
+            var full = prefix.Length > 0 ? $"{prefix}/{entry.Name}" : entry.Name;
+            if (entry.TargetType == TreeEntryTargetType.Tree)
+            {
+                foreach (var p in WalkTree((Tree)entry.Target, full))
+                    yield return p;
+            }
+            else
+            {
+                yield return full;
+            }
+        }
     }
 
     public bool IsValid(string repoPath) =>
