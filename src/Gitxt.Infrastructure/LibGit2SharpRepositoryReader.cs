@@ -55,18 +55,6 @@ public sealed class LibGit2SharpRepositoryReader : IRepositoryReader
     public IReadOnlyList<string> ReadCommitShasByPath(string repoPath, string filePath)
     {
         using var repo = new Repository(repoPath);
-        var startPoints = repo.Branches
-            .Select(b => b.Tip)
-            .OfType<LibCommit>()
-            .Concat(repo.Head?.Tip is { } h ? [h] : [])
-            .ToList<object>();
-        if (startPoints.Count == 0) return [];
-
-        var filter = new CommitFilter
-        {
-            IncludeReachableFrom = startPoints,
-            SortBy = CommitSortStrategies.Topological | CommitSortStrategies.Time,
-        };
 
         // If the query is a bare filename (no directory separator), resolve it to full
         // repo-relative paths by walking the HEAD tree so QueryBy finds the right history.
@@ -86,10 +74,31 @@ public sealed class LibGit2SharpRepositoryReader : IRepositoryReader
             pathsToSearch = [filePath];
         }
 
+        // LibGit2Sharp's FileHistory has a bug with divergent multi-branch start points
+        // (KeyNotFoundException in internal dictionary). Query each unique tip separately
+        // and union the results to get full cross-branch coverage without triggering it.
+        var uniqueTips = repo.Branches
+            .Select(b => b.Tip)
+            .OfType<LibCommit>()
+            .Concat(repo.Head?.Tip is { } h ? [h] : [])
+            .GroupBy(c => c.Sha)
+            .Select(g => g.First())
+            .ToList();
+
+        if (uniqueTips.Count == 0) return [];
+
         var shaSet = new HashSet<string>();
-        foreach (var path in pathsToSearch)
-            foreach (var entry in repo.Commits.QueryBy(path, filter))
-                shaSet.Add(entry.Commit.Sha);
+        foreach (var tip in uniqueTips)
+        {
+            var filter = new CommitFilter
+            {
+                IncludeReachableFrom = tip,
+                SortBy = CommitSortStrategies.Topological | CommitSortStrategies.Time,
+            };
+            foreach (var path in pathsToSearch)
+                foreach (var entry in repo.Commits.QueryBy(path, filter))
+                    shaSet.Add(entry.Commit.Sha);
+        }
 
         return shaSet.ToList();
     }
