@@ -11,6 +11,7 @@ export interface Settings {
   detailTopHeight: number;
   detailMetaHeight: number;
   diffView: string;
+  viewMode: "simple" | "complex";
   repos: string[];
   lastRepo: string | null;
 }

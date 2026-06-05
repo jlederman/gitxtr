@@ -21,6 +21,18 @@ const searchHideEl = document.getElementById("search-hide") as HTMLButtonElement
 const branchSel   = document.getElementById("branch-select") as HTMLSelectElement;
 
 let filterHide = false;
+let viewMode: "simple" | "complex" = "complex";
+
+function applyViewMode(mode: "simple" | "complex"): void {
+  viewMode = mode;
+  document.body.classList.toggle("simple", mode === "simple");
+  (document.getElementById("toggle-view") as HTMLButtonElement).textContent =
+    mode === "simple" ? "Complex" : "Simple";
+  if (mode === "simple") {
+    (document.getElementById("shortcuts") as HTMLElement).hidden = true;
+    (document.getElementById("settings")  as HTMLElement).hidden = true;
+  }
+}
 
 const renderer = new GraphRenderer(
   canvas,
@@ -66,6 +78,7 @@ const renderer = new GraphRenderer(
 const DEFAULT_SETTINGS: BootSettings = {
   theme: "mocha", fontFamily: "ui-monospace, monospace", fontSize: 13,
   detailHeight: 320, detailTopHeight: 200, detailMetaHeight: 120, diffView: "unified",
+  viewMode: "complex",
   repos: [], lastRepo: null, currentRepo: null,
 };
 
@@ -89,6 +102,7 @@ async function boot(): Promise<void> {
   }
   applyAppearance(settings, renderer);
   initSettings({ renderer, settings, getRepoPath: getCurrentRepo });
+  applyViewMode(settings.viewMode ?? "complex");
   // Minimum visible heights for each pane (excluding splitter handles):
   //   diff ≥ 80px, file list ≥ 60px, meta ≥ 60px
   // → detail-top min = 60 (meta) + 6 (msplit) + 60 (files) = 126 → 130
@@ -180,6 +194,7 @@ async function boot(): Promise<void> {
   initRebaseModal();
 
   initContextMenu((action, payload) => {
+    if (viewMode === "simple") return;
     const p = payload as Record<string, unknown>;
     if (p.kind === "commit") {
       const row = p.row as Row;
@@ -237,6 +252,14 @@ async function boot(): Promise<void> {
   document.getElementById("shortcuts-close")!.addEventListener("click", () => { shortcutsEl.hidden = true; });
   shortcutsEl.addEventListener("pointerdown", (e) => { if (e.target === shortcutsEl) shortcutsEl.hidden = true; });
 
+  const toggleViewMode = () => {
+    const newMode = viewMode === "simple" ? "complex" : "simple";
+    applyViewMode(newMode);
+    applyFilter();
+    void request("saveSettings", { settings: { viewMode: newMode } });
+  };
+  document.getElementById("toggle-view")!.addEventListener("click", toggleViewMode);
+
   searchEl.addEventListener("input", applyFilter);
   searchHideEl.addEventListener("click", () => {
     filterHide = !filterHide;
@@ -265,10 +288,17 @@ async function boot(): Promise<void> {
       searchEl.select();
     }
     if (e.key === "?" && !e.metaKey && !e.ctrlKey) toggleShortcuts();
+    if ((e.key === "v" || e.key === "V") && !e.metaKey && !e.ctrlKey && !e.shiftKey &&
+        !(document.activeElement instanceof HTMLInputElement ||
+          document.activeElement instanceof HTMLTextAreaElement)) {
+      toggleViewMode();
+    }
     if (e.ctrlKey && e.code === "Space") {
       e.preventDefault();
-      const repo = getCurrentRepo();
-      if (repo) void openCommitModal(repo);
+      if (viewMode !== "simple") {
+        const repo = getCurrentRepo();
+        if (repo) void openCommitModal(repo);
+      }
     }
     if (e.key === "Escape") shortcutsEl.hidden = true;
   });
@@ -325,7 +355,7 @@ function applyFilter(): void {
   if (!raw) {
     searchHideEl.hidden = true;
     renderer.setFilter(null);
-    const display: GraphView = fullView.hasUncommittedChanges
+    const display: GraphView = fullView.hasUncommittedChanges && viewMode !== "simple"
       ? { ...fullView, rows: [makeWipRow(fullView.rows[0]), ...fullView.rows] }
       : fullView;
     renderer.setView(display);
