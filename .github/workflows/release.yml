@@ -114,5 +114,5 @@ jobs:
       - name: Upload to GitHub Release
         run: |
           vpk upload github --repoUrl "https://github.com/${{ github.repository }}" \
-            --publish --releaseName "gitxt ${{ steps.ver.outputs.version }}" \
+            --publish --merge --releaseName "gitxt ${{ steps.ver.outputs.version }}" \
             --tag "v${{ steps.ver.outputs.version }}" --token "${{ secrets.GITHUB_TOKEN }}"
