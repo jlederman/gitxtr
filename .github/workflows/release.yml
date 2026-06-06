@@ -99,11 +99,11 @@ jobs:
             --token "${{ secrets.GITHUB_TOKEN }}" || echo "no prior release; first publish"
 
       - name: Pack
+        timeout-minutes: 10
         run: |
           ARGS=(-u gitxt -v "${{ steps.ver.outputs.version }}" -p publish --packTitle gitxt)
           if [ "$RUNNER_OS" = "macOS" ] && [ -n "$APPLE_CERT_P12" ]; then
             ARGS+=(--signAppIdentity "$APPLE_SIGN_IDENTITY" \
-                   --signInstallIdentity "$APPLE_INSTALL_IDENTITY" \
                    --signEntitlements build/gitxt.entitlements \
                    --notaryProfile gitxt-notary)
           fi
