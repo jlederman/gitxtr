@@ -103,7 +103,7 @@ jobs:
           if [ "$RUNNER_OS" = "macOS" ] && [ -n "$APPLE_CERT_P12" ]; then
             ARGS+=(--signAppIdentity "$APPLE_SIGN_IDENTITY" \
                    --signInstallIdentity "$APPLE_INSTALL_IDENTITY" \
-                   --signEntitlements build/entitlements.mac.plist \
+                   --signEntitlements build/gitxt.entitlements \
                    --notaryProfile gitxt-notary)
           fi
           if [ "$RUNNER_OS" = "Windows" ] && [ -n "$WINDOWS_CERT_P12" ]; then
