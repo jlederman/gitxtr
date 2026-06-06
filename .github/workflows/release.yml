@@ -35,6 +35,7 @@ jobs:
       run:
         shell: bash
     env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
       APPLE_CERT_P12: ${{ secrets.APPLE_CERT_P12 }}
       APPLE_CERT_PASSWORD: ${{ secrets.APPLE_CERT_PASSWORD }}
       APPLE_SIGN_IDENTITY: ${{ secrets.APPLE_SIGN_IDENTITY }}
@@ -114,5 +115,21 @@ jobs:
       - name: Upload to GitHub Release
         run: |
           vpk upload github --repoUrl "https://github.com/${{ github.repository }}" \
-            --publish --merge --releaseName "gitxt ${{ steps.ver.outputs.version }}" \
+            --merge --releaseName "gitxt ${{ steps.ver.outputs.version }}" \
             --tag "v${{ steps.ver.outputs.version }}" --token "${{ secrets.GITHUB_TOKEN }}"
+
+  finalize:
+    needs: release
+    runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Publish release
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          gh release edit "v$VERSION" --draft=false --repo "${{ github.repository }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
