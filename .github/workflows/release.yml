@@ -93,11 +93,6 @@ jobs:
         if: runner.os == 'Windows' && env.WINDOWS_CERT_P12 != ''
         run: echo "$WINDOWS_CERT_P12" | base64 --decode > "$RUNNER_TEMP/cert.pfx"
 
-      - name: Download existing releases (for deltas)
-        run: |
-          vpk download github --repoUrl "https://github.com/${{ github.repository }}" \
-            --token "${{ secrets.GITHUB_TOKEN }}" || echo "no prior release; first publish"
-
       - name: Pack
         timeout-minutes: 10
         run: |
@@ -111,6 +106,17 @@ jobs:
             ARGS+=(--signParams "/fd sha256 /tr http://timestamp.digicert.com /td sha256 /f $RUNNER_TEMP/cert.pfx /p $WINDOWS_CERT_PASSWORD")
           fi
           vpk pack "${ARGS[@]}"
+
+      - name: Sign and notarize macOS installer
+        if: runner.os == 'macOS' && env.APPLE_CERT_P12 != ''
+        timeout-minutes: 5
+        run: |
+          PKG="Releases/gitxt-osx-Setup.pkg"
+          SIGNED="Releases/gitxt-osx-Setup-signed.pkg"
+          productsign --sign "$APPLE_INSTALL_IDENTITY" "$PKG" "$SIGNED"
+          xcrun notarytool submit "$SIGNED" --keychain-profile gitxt-notary --wait
+          xcrun stapler staple "$SIGNED"
+          mv "$SIGNED" "$PKG"
 
       - name: Upload to GitHub Release
         run: |
