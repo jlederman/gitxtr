@@ -1,11 +1,11 @@
 :root {
-  /* Defaults mirror the "mocha" theme so the first paint is correct before settings load.
+  /* Defaults mirror the "atom-one-light" theme so the first paint is correct before settings load.
      applyThemeCss() overrides these at runtime. */
-  --bg: #1e1e2e; --surface: #181825; --surface2: #11111b; --border: #313244;
-  --fg: #cdd6f4; --muted: #9399b2; --accent: #f5c2e7; --sha: #89b4fa;
-  --ref-bg: rgba(166,227,161,0.18); --ref-fg: #a6e3a1; --sel: rgba(137,180,250,0.13);
-  --add-bg: rgba(166,227,161,0.13); --add-fg: #a6e3a1;
-  --del-bg: rgba(243,139,168,0.13); --del-fg: #f38ba8; --hunk: #89dceb; --fhdr: #cba6f7;
+  --bg: #f9f9f9; --surface: #ededed; --surface2: #dbdbdb; --border: #e0e0e1;
+  --fg: #2a2c33; --muted: #000000; --accent: #2f5af3; --sha: #2f5af3;
+  --ref-bg: rgba(63,149,58,0.18); --ref-fg: #3f953a; --sel: rgba(47,90,243,0.25);
+  --add-bg: rgba(63,149,58,0.13); --add-fg: #3f953a;
+  --del-bg: rgba(222,62,53,0.13); --del-fg: #de3e35; --hunk: #3f953a; --fhdr: #a00095;
   --font-family: ui-monospace, "Cascadia Code", "JetBrains Mono", monospace;
   --font-size: 13px;
   --detail-height: 320px;
@@ -124,7 +124,7 @@ canvas { position: absolute; inset: 0; display: block; }
 #detail-meta .sha { color: var(--sha); }
 #detail-meta .who { color: var(--fg); }
 #detail-meta .when { color: var(--muted); }
-#detail-meta .subject { color: #f9e2af; font-weight: bold; }
+#detail-meta .subject { color: var(--accent); font-weight: bold; }
 #detail-meta .chip {
   display: inline-block; padding: 0 6px; margin-right: 4px;
   border-radius: 4px; background: var(--ref-bg); color: var(--ref-fg);
@@ -189,7 +189,7 @@ canvas { position: absolute; inset: 0; display: block; }
 #detail-files .fstat { width: 1.1em; text-align: center; font-weight: bold; flex: 0 0 auto; }
 .st-add { color: var(--add-fg); }
 .st-del { color: var(--del-fg); }
-.st-mod { color: #f9e2af; }
+.st-mod { color: var(--lane-2); }
 .st-ren { color: var(--sha); }
 #detail-files .fpath { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; }
 #detail-files .fnums { flex: 0 0 auto; }
@@ -218,7 +218,7 @@ canvas { position: absolute; inset: 0; display: block; }
 .diff-pane .del { background: var(--del-bg); color: var(--del-fg); }
 .diff-pane .hunk { color: var(--hunk); }
 .diff-pane .fhdr { color: var(--fhdr); }
-.diff-pane .trunc { color: #fab387; padding: 6px 12px; }
+.diff-pane .trunc { color: var(--muted); padding: 6px 12px; }
 /* inline word-level diff: stronger highlight on the changed tokens within a line */
 .diff-pane .wd-del { background: rgba(243,139,168,0.30); background: color-mix(in srgb, var(--del-fg) 30%, transparent); border-radius: 2px; }
 .diff-pane .wd-add { background: rgba(166,227,161,0.30); background: color-mix(in srgb, var(--add-fg) 30%, transparent); border-radius: 2px; }
@@ -654,6 +654,32 @@ canvas { position: absolute; inset: 0; display: block; }
 }
 .tp-msg { flex: 1; overflow: hidden; text-overflow: ellipsis; }
 .tp-who { color: var(--muted); font-size: 10px; flex: 0 0 auto; }
+.tp-meta {
+  background: var(--surface);
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  line-height: 1.6;
+}
+.tp-meta-line { display: flex; align-items: baseline; gap: 4px; flex-wrap: wrap; }
+.tp-meta-sha { color: var(--sha); }
+.tp-meta-when { color: var(--muted); }
+.tp-meta-who { color: var(--fg); }
+.tp-meta-subject { color: var(--accent); font-weight: bold; margin-top: 2px; }
+.tp-files { background: var(--bg); border-bottom: 1px solid var(--border); padding: 2px 0; }
+.tp-fitem {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 1px 10px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.tp-fitem.tp-sel { background: var(--sel); }
+.tp-fstat { width: 1.1em; text-align: center; font-weight: bold; flex: 0 0 auto; }
+.tp-fpath { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+.tp-fadd { color: var(--add-fg); flex: 0 0 auto; }
+.tp-fdel { color: var(--del-fg); flex: 0 0 auto; }
 .tp-diff { background: var(--bg); padding: 2px 0; white-space: pre; }
 .tp-diff.diff-pane .line { padding: 1px 10px; font-size: 11px; }
 

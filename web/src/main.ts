@@ -80,7 +80,7 @@ const renderer = new GraphRenderer(
 );
 
 const DEFAULT_SETTINGS: BootSettings = {
-  theme: "mocha", fontFamily: "ui-monospace, monospace", fontSize: 13,
+  theme: "atom-one-light", fontFamily: "ui-monospace, monospace", fontSize: 13,
   detailHeight: 320, detailTopHeight: 200, detailMetaHeight: 120, diffView: "unified",
   viewMode: "complex",
   repos: [], lastRepo: null, currentRepo: null,
