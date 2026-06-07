@@ -60,6 +60,64 @@
             <label>Font family <input id="set-font" type="text" spellcheck="false" /></label>
             <label>Font size <input id="set-fontsize" type="number" min="9" max="28" /></label>
             <div class="row"><span id="appearance-status"></span></div>
+            <div id="theme-preview">
+              <div class="tp-hdr">
+                <span class="tp-hdr-title">gitxtr</span>
+                <span class="tp-hdr-chip">my-project ▼</span>
+                <span class="tp-hdr-chip">main ▼</span>
+                <span class="tp-hdr-btn">Fetch</span>
+                <span class="tp-hdr-btn">Pull</span>
+                <span class="tp-hdr-sep"></span>
+                <span class="tp-hdr-btn">⚙</span>
+              </div>
+              <div class="tp-graph">
+                <svg width="68" height="88" viewBox="0 0 68 88" style="display:block;flex:0 0 auto">
+                  <line x1="10" y1="0" x2="10" y2="88" stroke="var(--lane-0)" stroke-width="1.5"/>
+                  <line x1="30" y1="0" x2="30" y2="66" stroke="var(--lane-1)" stroke-width="1.5"/>
+                  <path d="M30 66 Q30 77 10 77" stroke="var(--lane-1)" stroke-width="1.5" fill="none"/>
+                  <path d="M10 22 Q50 22 50 33" stroke="var(--lane-2)" stroke-width="1.5" fill="none"/>
+                  <line x1="50" y1="33" x2="50" y2="44" stroke="var(--lane-2)" stroke-width="1.5"/>
+                  <path d="M50 44 Q50 55 30 55" stroke="var(--lane-2)" stroke-width="1.5" fill="none"/>
+                  <circle cx="10" cy="11" r="4" fill="var(--bg)" stroke="var(--lane-0)" stroke-width="1.5"/>
+                  <circle cx="50" cy="33" r="4" fill="var(--bg)" stroke="var(--lane-2)" stroke-width="1.5"/>
+                  <circle cx="30" cy="55" r="4" fill="var(--bg)" stroke="var(--lane-1)" stroke-width="1.5"/>
+                  <circle cx="10" cy="77" r="4" fill="var(--bg)" stroke="var(--lane-0)" stroke-width="1.5"/>
+                </svg>
+                <div class="tp-rows">
+                  <div class="tp-row">
+                    <span class="tp-sha">a1b2c3d</span>
+                    <span class="tp-chip">main</span>
+                    <span class="tp-chip">origin/main</span>
+                    <span class="tp-msg">Merge pull request #42</span>
+                  </div>
+                  <div class="tp-row tp-sel">
+                    <span class="tp-sha">e4f5a6b</span>
+                    <span class="tp-chip">feature/auth</span>
+                    <span class="tp-msg">Add OAuth2 login flow</span>
+                    <span class="tp-who">Jane S. · 2h</span>
+                  </div>
+                  <div class="tp-row">
+                    <span class="tp-sha">7c8d9e0</span>
+                    <span class="tp-msg">Fix authentication bug</span>
+                    <span class="tp-who">John D. · 1d</span>
+                  </div>
+                  <div class="tp-row">
+                    <span class="tp-sha">f1a2b3c</span>
+                    <span class="tp-msg">Initial commit</span>
+                    <span class="tp-who">3 days ago</span>
+                  </div>
+                </div>
+              </div>
+              <div class="tp-diff diff-pane">
+                <div class="line fhdr">src/auth/login.ts</div>
+                <div class="line hunk">@@ -14,7 +14,9 @@ export function authenticate()</div>
+                <div class="line">  const session = createSession();</div>
+                <div class="line del">- const token = legacyAuth(user);</div>
+                <div class="line add">+ const token = await oauthLogin(user);</div>
+                <div class="line add">+ await session.store(token);</div>
+                <div class="line">  return { session, token };</div>
+              </div>
+            </div>
           </section>
           <section data-pane="git" hidden>
             <h3>Global identity <span class="hint">~/.gitconfig</span></h3>

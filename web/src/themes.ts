@@ -2,6 +2,7 @@
 // Canvas graph (the GraphRenderer reads the Theme object directly, since a canvas can't use
 // CSS variables). Defaults in style.css mirror "mocha" so the first paint looks right before
 // settings load.
+import { ITERM_THEMES } from "./iterm-themes";
 
 export interface Theme {
   name: string;
@@ -64,7 +65,8 @@ const dracula: Theme = {
   delBg: "rgba(255,85,85,0.13)", delFg: "#ff5555", hunk: "#8be9fd", fhdr: "#bd93f9",
 };
 
-export const THEMES: Record<string, Theme> = { mocha, macchiato, latte, dracula };
+// iTerm2 themes fill the base; hand-crafted entries override any name collision.
+export const THEMES: Record<string, Theme> = { ...ITERM_THEMES, mocha, macchiato, latte, dracula };
 
 export function getTheme(name: string): Theme {
   return THEMES[name] ?? mocha;

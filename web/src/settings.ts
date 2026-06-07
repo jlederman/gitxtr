@@ -69,6 +69,17 @@ export function initSettings(opts: {
     });
   };
   themeSel.addEventListener("change", onAppearance);
+  // Prevent the native macOS popup from opening on arrow keys; cycle themes manually instead.
+  themeSel.addEventListener("keydown", (e) => {
+    if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+    e.preventDefault();
+    const next = themeSel.selectedIndex + (e.key === "ArrowDown" ? 1 : -1);
+    const clamped = Math.max(0, Math.min(themeSel.options.length - 1, next));
+    if (clamped !== themeSel.selectedIndex) {
+      themeSel.selectedIndex = clamped;
+      onAppearance();
+    }
+  });
   input("set-font").addEventListener("change", onAppearance);
   input("set-fontsize").addEventListener("change", onAppearance);
 

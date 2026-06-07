@@ -592,6 +592,71 @@ canvas { position: absolute; inset: 0; display: block; }
 #commit-files-pane .fstat { width: 1.1em; text-align: center; font-weight: bold; flex: 0 0 auto; }
 #commit-files-pane .fpath { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; }
 
+/* ── Theme preview panel ────────────────────────────────────────────────── */
+#theme-preview {
+  margin-top: 20px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  font-size: 12px;
+}
+.tp-hdr {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 28px;
+  padding: 0 10px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.tp-hdr-title { color: var(--accent); font-weight: bold; font-size: 11px; }
+.tp-hdr-chip {
+  padding: 1px 6px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--fg);
+  font-size: 10px;
+}
+.tp-hdr-btn {
+  padding: 1px 6px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.tp-hdr-sep { flex: 1; }
+.tp-graph {
+  display: flex;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+.tp-rows { flex: 1; min-width: 0; }
+.tp-row {
+  height: 22px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.tp-row.tp-sel { background: var(--sel); }
+.tp-sha { color: var(--sha); font-size: 11px; flex: 0 0 auto; }
+.tp-chip {
+  flex: 0 0 auto;
+  padding: 0 5px;
+  border-radius: 3px;
+  background: var(--ref-bg);
+  color: var(--ref-fg);
+  font-size: 10px;
+}
+.tp-msg { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+.tp-who { color: var(--muted); font-size: 10px; flex: 0 0 auto; }
+.tp-diff { background: var(--bg); padding: 2px 0; white-space: pre; }
+.tp-diff.diff-pane .line { padding: 1px 10px; font-size: 11px; }
+
 /* ── Simple view ─────────────────────────────────────────────────────────── */
 /* Hide header chrome — only title, toggle button, and status remain. */
 body.simple #repo-select,
