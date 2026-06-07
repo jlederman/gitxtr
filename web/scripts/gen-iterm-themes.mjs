@@ -68,8 +68,10 @@ function toTheme(filename, colors) {
 
   const bg  = get('Background Color', { r: 0.12, g: 0.12, b: 0.18 });
   const fg  = get('Foreground Color', { r: 0.80, g: 0.80, b: 0.80 });
-  const sel = get('Selection Color',  { r: 0.30, g: 0.30, b: 0.50 });
-  const a8  = get('Ansi 8 Color',  mix(fg, bg, 0.5)); // bright black / muted
+  const a4  = get('Ansi 4 Color',  { r: 0.2, g: 0.3, b: 0.9 }); // normal blue
+  const a8raw = get('Ansi 8 Color', null);
+  // Some themes set Ansi 8 = background (invisible). If contrast vs bg is too low, derive instead.
+  const a8 = (a8raw && Math.abs(lum(a8raw) - lum(bg)) > 0.08) ? a8raw : mix(fg, bg, 0.45);
   const a9  = get('Ansi 9 Color',  { r: 1.0, g: 0.3, b: 0.3 }); // bright red
   const a10 = get('Ansi 10 Color', { r: 0.3, g: 1.0, b: 0.3 }); // bright green
   const a11 = get('Ansi 11 Color', { r: 1.0, g: 1.0, b: 0.3 }); // bright yellow
@@ -84,11 +86,20 @@ function toTheme(filename, colors) {
   const surface2 = isLight ? mix(bg, BLACK, 0.12)  : mix(bg, BLACK, 0.30);
   const border   = mix(bg, fg, isLight ? 0.12 : 0.15);
 
+  // Selection Color from iTerm2 is the terminal text-selection highlight — a background swatch,
+  // not a UI color. It is near-white on many light themes, making it invisible as text or as a
+  // button background. Instead:
+  //   accent  → Ansi 4 (dark blue, readable as text AND as button bg w/ white fg) on light themes
+  //             Ansi 13 (bright magenta, vivid on dark bg) on dark themes
+  //   selectionBg → Ansi 12 (bright blue, same vivid base as sha) so it's always visible
+  const accent      = isLight ? hex(a4)  : hex(a13);
+  const selectionBg = rgba(a12, isLight ? 0.25 : 0.18);
+
   return {
     name, label, light: isLight,
     bg: hex(bg), surface: hex(surface), surface2: hex(surface2), border: hex(border),
-    fg: hex(fg), muted: hex(a8), accent: hex(sel), sha: hex(a12),
-    refBg: rgba(a10, 0.18), refFg: hex(a10), selectionBg: rgba(sel, 0.18),
+    fg: hex(fg), muted: hex(a8), accent, sha: hex(a12),
+    refBg: rgba(a10, 0.18), refFg: hex(a10), selectionBg,
     lanes: [hex(a12), hex(a10), hex(a11), hex(a9), hex(a13), hex(a14), hex(a3), hex(a1)],
     addBg: rgba(a10, 0.13), addFg: hex(a10),
     delBg: rgba(a9, 0.13),  delFg: hex(a9),
