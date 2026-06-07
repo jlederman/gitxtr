@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>gitxtr</AssemblyName>
+    <!-- CI overrides this from the git tag (vpk pack -v); the default keeps local packs valid. -->
+    <Version>0.0.1</Version>
+    <WebDir>$(MSBuildProjectDirectory)/../../web</WebDir>
+    <WebBundle>$(MSBuildProjectDirectory)/obj/webdist/index.html</WebBundle>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Gitxtr.Application\Gitxtr.Application.csproj" />
+    <ProjectReference Include="..\Gitxtr.Infrastructure\Gitxtr.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.8" />
+    <PackageReference Include="Photino.NET" Version="4.0.16" />
+    <PackageReference Include="Velopack" Version="1.2.0" />
+  </ItemGroup>
+
+  <!-- The Vite single-file bundle is a GENERATED artifact, not a source file. BuildWebUi emits it
+       into obj/webdist (a git-ignored build-intermediate dir) and the Content Link below copies it
+       to wwwroot/ in the build OUTPUT — so nothing generated lands in the source tree. It runs
+       during the build (so `dotnet run` works from a clean checkout) and is incremental via
+       Inputs/Outputs. Requires Node/npm on PATH. -->
+  <ItemGroup>
+    <WebUiSource Include="$(WebDir)/index.html;$(WebDir)/package.json;$(WebDir)/vite.config.ts;$(WebDir)/tsconfig.json" />
+    <WebUiSource Include="$(WebDir)/src/**/*" />
+    <Content Include="obj/webdist/index.html" Link="wwwroot/index.html" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <Target Name="BuildWebUi" BeforeTargets="AssignTargetPaths" Inputs="@(WebUiSource)" Outputs="$(WebBundle)">
+    <Exec Command="npm install" WorkingDirectory="$(WebDir)" Condition="!Exists('$(WebDir)/node_modules')" />
+    <Exec Command="npm run build" WorkingDirectory="$(WebDir)" />
+  </Target>
+
+</Project>

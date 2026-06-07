@@ -1,9 +1,9 @@
-# gitxt dev workflow. Run the two dev targets in separate terminals:
+# gitxtr dev workflow. Run the two dev targets in separate terminals:
 #   terminal 1:  make web
 #   terminal 2:  make app REPO=/path/to/repo
 # Requires Node/npm (nvm) and the .NET 10 SDK on PATH.
 
-APP  := src/Gitxt.Host
+APP  := src/Gitxtr.Host
 REPO ?=
 
 # Local installer build (current OS, unsigned). Override as: make pack RID=win-x64 VERSION=1.2.3
@@ -13,7 +13,7 @@ VERSION ?= 0.0.1
 .PHONY: help web app run build test install clean pack
 
 help:
-	@echo "gitxt make targets:"
+	@echo "gitxtr make targets:"
 	@echo "  make web                # terminal 1: Vite dev server (frontend HMR)"
 	@echo "  make app [REPO=/path]   # terminal 2: backend w/ C# hot-reload, UI served from the dev server"
 	@echo "  make run [REPO=/path]   # production run (built bundle, no dev server)"
@@ -30,7 +30,7 @@ web:
 # Terminal 2 — backend: dotnet watch (rebuilds/restarts on C# changes), with the window pointed
 # at the Vite dev server so web edits hot-reload. Pass REPO=/path to open a repo on launch.
 app:
-	GITXT_DEV_URL=http://localhost:5173 dotnet watch --project $(APP) run -- $(REPO)
+	GITXTR_DEV_URL=http://localhost:5173 dotnet watch --project $(APP) run -- $(REPO)
 
 # Production-style run: loads the bundled UI from wwwroot (no dev server / HMR).
 run:
@@ -40,7 +40,7 @@ build:
 	dotnet build $(APP)
 
 test:
-	dotnet test tests/Gitxt.Domain.Tests
+	dotnet test tests/Gitxtr.Domain.Tests
 
 install:
 	cd web && npm install
@@ -52,5 +52,5 @@ clean:
 # Self-contained publish + Velopack pack for the current OS (unsigned). Needs the vpk tool:
 #   dotnet tool install -g vpk
 pack:
-	dotnet publish $(APP)/Gitxt.Host.csproj -c Release -r $(RID) --self-contained true -o publish
-	vpk pack -u gitxt -v $(VERSION) -p publish --packTitle gitxt -o release
+	dotnet publish $(APP)/Gitxtr.Host.csproj -c Release -r $(RID) --self-contained true -o publish
+	vpk pack -u gitxtr -v $(VERSION) -p publish --packTitle gitxtr -o release

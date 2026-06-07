@@ -64,7 +64,7 @@ jobs:
 
       - name: Publish (self-contained)
         run: >
-          dotnet publish src/Gitxt.Host/Gitxt.Host.csproj
+          dotnet publish src/Gitxtr.Host/Gitxtr.Host.csproj
           -c Release -r ${{ matrix.rid }} --self-contained true -o publish
 
       - name: Install vpk
@@ -86,7 +86,7 @@ jobs:
           security import "$RUNNER_TEMP/cert.p12" -k "$KEYCHAIN" -P "$APPLE_CERT_PASSWORD" \
             -T /usr/bin/codesign -T /usr/bin/productsign -T /usr/bin/security
           security set-key-partition-list -S apple-tool:,apple:,codesign:,productsign: -s -k actions "$KEYCHAIN"
-          xcrun notarytool store-credentials gitxt-notary \
+          xcrun notarytool store-credentials gitxtr-notary \
             --apple-id "$APPLE_ID" --team-id "$APPLE_TEAM_ID" --password "$APPLE_APP_PASSWORD"
 
       - name: Decode Windows cert
@@ -96,11 +96,11 @@ jobs:
       - name: Pack
         timeout-minutes: 10
         run: |
-          ARGS=(-u gitxt -v "${{ steps.ver.outputs.version }}" -p publish --packTitle gitxt)
+          ARGS=(-u gitxtr -v "${{ steps.ver.outputs.version }}" -p publish --packTitle gitxtr)
           if [ "$RUNNER_OS" = "macOS" ] && [ -n "$APPLE_CERT_P12" ]; then
             ARGS+=(--signAppIdentity "$APPLE_SIGN_IDENTITY" \
-                   --signEntitlements build/gitxt.entitlements \
-                   --notaryProfile gitxt-notary)
+                   --signEntitlements build/gitxtr.entitlements \
+                   --notaryProfile gitxtr-notary)
           fi
           if [ "$RUNNER_OS" = "Windows" ] && [ -n "$WINDOWS_CERT_P12" ]; then
             ARGS+=(--signParams "/fd sha256 /tr http://timestamp.digicert.com /td sha256 /f $RUNNER_TEMP/cert.pfx /p $WINDOWS_CERT_PASSWORD")
@@ -111,17 +111,17 @@ jobs:
         if: runner.os == 'macOS' && env.APPLE_CERT_P12 != ''
         timeout-minutes: 5
         run: |
-          PKG="Releases/gitxt-osx-Setup.pkg"
-          SIGNED="Releases/gitxt-osx-Setup-signed.pkg"
+          PKG="Releases/gitxtr-osx-Setup.pkg"
+          SIGNED="Releases/gitxtr-osx-Setup-signed.pkg"
           productsign --sign "$APPLE_INSTALL_IDENTITY" "$PKG" "$SIGNED"
-          xcrun notarytool submit "$SIGNED" --keychain-profile gitxt-notary --wait
+          xcrun notarytool submit "$SIGNED" --keychain-profile gitxtr-notary --wait
           xcrun stapler staple "$SIGNED"
           mv "$SIGNED" "$PKG"
 
       - name: Upload to GitHub Release
         run: |
           vpk upload github --repoUrl "https://github.com/${{ github.repository }}" \
-            --merge --releaseName "gitxt ${{ steps.ver.outputs.version }}" \
+            --merge --releaseName "gitxtr ${{ steps.ver.outputs.version }}" \
             --tag "v${{ steps.ver.outputs.version }}" --token "${{ secrets.GITHUB_TOKEN }}"
 
   finalize:
