@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- gitxtr app icon: a commit-graph branch-and-merge glyph, mirroring the app's own graph view.
+       userSpaceOnUse gradient so the ringed nodes' centres sample the same background as the
+       squircle behind them (the nodes read as true rings, like the app draws them). -->
+  <defs>
+    <linearGradient id="bg" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="1024">
+      <stop offset="0" stop-color="#2a2e45"/>
+      <stop offset="1" stop-color="#191b2a"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="224" fill="url(#bg)"/>
+  <g fill="none" stroke-width="42" stroke-linecap="round">
+    <line x1="400" y1="300" x2="400" y2="724" stroke="#5b8cff"/>
+    <path d="M400 372 C400 472 660 430 660 512" stroke="#a6e3a1"/>
+    <path d="M660 512 C660 594 400 552 400 652" stroke="#a6e3a1"/>
+  </g>
+  <g stroke-width="42">
+    <circle cx="400" cy="300" r="60" fill="url(#bg)" stroke="#5b8cff"/>
+    <circle cx="400" cy="724" r="60" fill="url(#bg)" stroke="#5b8cff"/>
+    <circle cx="660" cy="512" r="60" fill="url(#bg)" stroke="#a6e3a1"/>
+  </g>
+</svg>
