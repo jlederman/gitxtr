@@ -11,12 +11,12 @@ internal sealed class SaveSettingsHandler(ISettingsStore store) : IMessageHandle
     private sealed record Patch(
         string? Theme, string? FontFamily, double? FontSize,
         double? DetailHeight, double? DetailTopHeight, double? DetailMetaHeight,
-        string? DiffView);
+        string? DiffView, string? TerminalHotkey);
 
     public object? Handle(MessageContext ctx)
     {
         var se = ctx.Root.GetProperty("settings");
-        var patch = JsonSerializer.Deserialize<Patch>(se.GetRawText(), JsonOpts) ?? new(null, null, null, null, null, null, null);
+        var patch = JsonSerializer.Deserialize<Patch>(se.GetRawText(), JsonOpts) ?? new(null, null, null, null, null, null, null, null);
         var cur = store.Load();
         store.Save(cur with
         {
@@ -27,6 +27,7 @@ internal sealed class SaveSettingsHandler(ISettingsStore store) : IMessageHandle
             DetailTopHeight = patch.DetailTopHeight is double dth ? (int)Math.Round(dth) : cur.DetailTopHeight,
             DetailMetaHeight = patch.DetailMetaHeight is double dmh ? (int)Math.Round(dmh) : cur.DetailMetaHeight,
             DiffView = patch.DiffView ?? cur.DiffView,
+            TerminalHotkey = patch.TerminalHotkey ?? cur.TerminalHotkey,
             // lastRepo can be set to null (clearing the last-used repo), so we check presence not value
             LastRepo = se.TryGetProperty("lastRepo", out var lrp) && lrp.ValueKind == JsonValueKind.String
                                    ? lrp.GetString() : cur.LastRepo,

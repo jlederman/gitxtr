@@ -115,6 +115,7 @@ export function mockResponse(type: string, payload: Record<string, unknown>): un
             detailTopHeight: 200,
             detailMetaHeight: 120,
             diffView: "unified",
+            terminalHotkey: "Ctrl+Backquote",
             repos: ["/tmp/gitxtr_demo"],
             lastRepo: null,
             currentRepo: "/tmp/gitxtr_demo",

@@ -1,0 +1,100 @@
+/* Integrated terminal: a pane that slides up from the bottom of the window. Owned by terminal.ts.
+   NOTE: the pane class is `.terminal-pane`, not `.terminal` — xterm puts a `terminal` class on its
+   own root element, so a `.terminal` rule here would bleed onto xterm and break its layout. */
+.terminal-pane {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: var(--term-height, 320px);
+    max-height: calc(100% - 40px);
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    z-index: 20;
+    transform: translateY(100%);
+    transition: transform 0.18s ease;
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.35);
+}
+.terminal-pane.open {
+    transform: translateY(0);
+}
+.terminal-pane:not(.open) {
+    pointer-events: none;
+}
+
+.term-resize {
+    position: absolute;
+    top: -3px;
+    left: 0;
+    right: 0;
+    height: 7px;
+    cursor: row-resize;
+    z-index: 1;
+}
+.term-resize:hover {
+    background: var(--accent);
+    opacity: 0.4;
+}
+
+.term-bar {
+    flex: 0 0 auto;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 10px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+}
+.term-title {
+    flex: 1;
+    color: var(--muted);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.term-close {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 6px;
+}
+.term-close:hover {
+    color: var(--fg);
+}
+
+.term-host {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 4px 8px;
+    overflow: hidden;
+    background: var(--bg);
+}
+.term-host .xterm {
+    height: 100%;
+}
+/* xterm leaves its viewport's CSS background at the default black; theme it so the area below
+   the last row (and the backdrop) matches the app, and tracks theme changes. */
+.term-host .xterm,
+.term-host .xterm-viewport {
+    background-color: var(--bg);
+}
+
+/* Header toggle button. */
+.open-terminal {
+    margin-left: auto;
+    padding: 2px 8px;
+    background: transparent;
+    border-color: transparent;
+    font-family: var(--font-family);
+    flex: 0 0 auto;
+}
+.open-terminal:hover {
+    background: var(--surface2);
+    border-color: var(--border);
+}

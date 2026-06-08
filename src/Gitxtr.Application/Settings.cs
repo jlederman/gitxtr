@@ -11,6 +11,7 @@ public sealed record Settings
     public int DetailTopHeight { get; init; } = 200;
     public int DetailMetaHeight { get; init; } = 120;
     public string DiffView { get; init; } = "unified"; // "unified" | "split"
+    public string TerminalHotkey { get; init; } = "Ctrl+Backquote"; // modifiers + KeyboardEvent.code
     public IReadOnlyList<string> Repos { get; init; } = [];
     public string? LastRepo { get; init; }
 }

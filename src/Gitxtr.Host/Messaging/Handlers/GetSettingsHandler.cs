@@ -24,6 +24,7 @@ internal sealed class GetSettingsHandler(ISettingsStore store, IRepositoryReader
             st.Repos,
             st.LastRepo,
             st.DiffView,
+            st.TerminalHotkey,
             currentRepo,
         };
     }

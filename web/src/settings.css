@@ -80,9 +80,17 @@
     color: var(--muted);
 }
 .settings-panes label > select,
-.settings-panes label > input {
+.settings-panes label > input,
+.settings-panes label > button {
     width: 100%;
     box-sizing: border-box;
+}
+.hotkey-capture {
+    text-align: center;
+}
+.hotkey-capture.capturing {
+    border-color: var(--accent);
+    color: var(--accent);
 }
 .settings-panes .row {
     display: flex;

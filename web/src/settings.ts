@@ -2,6 +2,12 @@ import "./settings.css";
 import { request } from "./bridge";
 import { THEMES, getTheme, applyThemeCss, applyFontCss } from "./themes";
 import { addRepo, renderManager } from "./repos";
+import {
+    refreshTerminalAppearance,
+    setTerminalHotkey,
+    hotkeyFromEvent,
+    prettyHotkey,
+} from "./terminal";
 import type { GraphRenderer } from "./graphRenderer";
 
 export interface Settings {
@@ -13,6 +19,7 @@ export interface Settings {
     detailMetaHeight: number;
     diffView: string;
     viewMode: "simple" | "complex";
+    terminalHotkey: string;
     repos: string[];
     lastRepo: string | null;
 }
@@ -39,6 +46,7 @@ export function applyAppearance(s: Settings, r: GraphRenderer): void {
     applyFontCss(s.fontFamily, s.fontSize);
     r.setTheme(theme);
     r.setFont(s.fontFamily, s.fontSize);
+    refreshTerminalAppearance();
 }
 
 export function initSettings(opts: {
@@ -89,6 +97,7 @@ export function initSettings(opts: {
     });
     input("set-font").addEventListener("change", onAppearance);
     input("set-fontsize").addEventListener("change", onAppearance);
+    initHotkeyCapture();
 
     $("open-settings").addEventListener("click", () => void open());
     $("settings-close").addEventListener("click", () => {
@@ -109,6 +118,37 @@ export function initSettings(opts: {
         .forEach((btn) => btn.addEventListener("click", () => selectCat(btn.dataset.cat!)));
     $("git-save").addEventListener("click", () => void saveGitIdentity());
     $("add-repo-settings").addEventListener("click", () => void addRepo());
+}
+
+// "Click, then press a key combo" capture for the terminal toggle hotkey. Escape cancels.
+function initHotkeyCapture(): void {
+    const btn = $("set-term-hotkey") as HTMLButtonElement;
+    const render = () => (btn.textContent = prettyHotkey(current.terminalHotkey));
+    render();
+
+    btn.addEventListener("click", () => {
+        if (btn.classList.contains("capturing")) return;
+        btn.classList.add("capturing");
+        btn.textContent = "press a key combo…";
+
+        const onKey = (e: KeyboardEvent) => {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            if (e.key === "Escape") return stop();
+            const hk = hotkeyFromEvent(e);
+            if (!hk) return; // bare modifier — keep waiting for a full chord
+            current = { ...current, terminalHotkey: hk };
+            setTerminalHotkey(hk);
+            void request("saveSettings", { settings: { terminalHotkey: hk } });
+            stop();
+        };
+        const stop = () => {
+            window.removeEventListener("keydown", onKey, true);
+            btn.classList.remove("capturing");
+            render();
+        };
+        window.addEventListener("keydown", onKey, true);
+    });
 }
 
 function clampInt(v: string, lo: number, hi: number, fallback: number): number {

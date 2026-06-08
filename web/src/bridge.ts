@@ -57,4 +57,11 @@ export function request<T>(type: string, payload: Record<string, unknown> = {}):
     });
 }
 
+// Fire-and-forget message to the host: no correlation id, so it bypasses the request/response
+// path entirely. Used by the terminal channel (term:*), where input/resize are one-way and
+// output arrives via onPush().
+export function send(type: string, payload: Record<string, unknown> = {}): void {
+    if (hasHost) (ext as PhotinoExternal).sendMessage(JSON.stringify({ type, ...payload }));
+}
+
 export const runningInHost = hasHost;
