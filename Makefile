@@ -10,6 +10,15 @@ REPO ?=
 RID     ?= osx-arm64
 VERSION ?= 0.0.1
 
+# Installer/bundle icon, by platform: .ico (Windows), .png (Linux), .icns (macOS).
+ifneq (,$(findstring win,$(RID)))
+ICON := build/icon/icon.ico
+else ifneq (,$(findstring linux,$(RID)))
+ICON := build/icon/icon.png
+else
+ICON := build/icon/icon.icns
+endif
+
 .PHONY: help web app run build test format install clean pack publish-win
 
 help:
@@ -62,7 +71,7 @@ clean:
 pack:
 	rm -rf publish
 	dotnet publish $(APP)/Gitxtr.Host.csproj -c Release -r $(RID) --self-contained true -o publish
-	vpk pack -u gitxtr -v $(VERSION) -p publish --packTitle gitxtr -o release
+	vpk pack -u gitxtr -v $(VERSION) -p publish --packTitle gitxtr --icon $(ICON) -o release
 
 # Cross-compile a Windows build from macOS/Linux for manual VM testing.
 # Copy ./publish/ to the Windows VM and run gitxtr.exe directly (no installer).

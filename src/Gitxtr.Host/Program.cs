@@ -102,6 +102,11 @@ var dispatcher = new MessageDispatcher(
     loggerFactory.CreateLogger<MessageDispatcher>());
 
 string indexPath = Path.Combine(AppContext.BaseDirectory, "wwwroot", "index.html");
+// Window/taskbar icon (the installed bundle's icon is set separately by Velopack --icon).
+// Windows wants a .ico; macOS/Linux take a .png. Both ship next to the exe (see the .csproj).
+string iconPath = Path.Combine(
+    AppContext.BaseDirectory,
+    OperatingSystem.IsWindows() ? "icon.ico" : "icon.png");
 // Dev hot-reload: GITXTR_DEV_URL points at the Vite dev server so web edits live-reload.
 // Run `npm run dev`, then `GITXTR_DEV_URL=http://localhost:5173 dotnet run --project src/Gitxtr.Host -- <repo>`.
 string? devUrl = Environment.GetEnvironmentVariable("GITXTR_DEV_URL");
@@ -110,6 +115,7 @@ void RunWindow()
 {
     window = new PhotinoWindow()
         .SetTitle("gitxtr")
+        .SetIconFile(iconPath)
         .SetUseOsDefaultSize(false)
         .SetSize(1100, 760)
         .Center()

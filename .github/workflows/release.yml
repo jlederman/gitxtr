@@ -107,6 +107,11 @@ jobs:
           if [ -n "${{ matrix.channel }}" ]; then
             ARGS+=(--channel "${{ matrix.channel }}")
           fi
+          case "$RUNNER_OS" in
+            macOS)   ARGS+=(--icon build/icon/icon.icns) ;;
+            Windows) ARGS+=(--icon build/icon/icon.ico) ;;
+            Linux)   ARGS+=(--icon build/icon/icon.png) ;;
+          esac
           if [ "$RUNNER_OS" = "macOS" ] && [ -n "$APPLE_CERT_P12" ]; then
             ARGS+=(--signAppIdentity "$APPLE_SIGN_IDENTITY" \
                    --signEntitlements build/gitxtr.entitlements \

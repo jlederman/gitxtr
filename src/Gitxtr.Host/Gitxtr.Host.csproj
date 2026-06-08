@@ -35,6 +35,13 @@
     <Content Include="obj/webdist/index.html" Link="wwwroot/index.html" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <!-- Runtime window/taskbar icon, copied next to the exe. Windows loads icon.ico, macOS/Linux
+       icon.png (see Program.cs). The installed bundle icon is set separately by Velopack at pack time. -->
+  <ItemGroup>
+    <Content Include="../../build/icon/icon.ico" Link="icon.ico" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="../../build/icon/icon.png" Link="icon.png" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <Target Name="BuildWebUi" BeforeTargets="AssignTargetPaths" Inputs="@(WebUiSource)" Outputs="$(WebBundle)">
     <Exec Command="npm install" WorkingDirectory="$(WebDir)" Condition="!Exists('$(WebDir)/node_modules')" />
     <Exec Command="npm run build" WorkingDirectory="$(WebDir)" />
