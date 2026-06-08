@@ -20,13 +20,13 @@ using var loggerFactory = LoggerFactory.Create(b => b
     .AddFilter(string.Empty, LogLevel.Warning)
     .AddConsole(o => o.LogToStandardErrorThreshold = LogLevel.Trace));
 
-var reader        = new LibGit2SharpRepositoryReader();
-var service       = new GraphQueryService(reader, new GraphLayoutEngine());
-var workingTree   = new LibGit2SharpWorkingTreeService();
-var branches      = new LibGit2SharpBranchService();
-var remotes       = new GitProcessRemoteService();
+var reader = new LibGit2SharpRepositoryReader();
+var service = new GraphQueryService(reader, new GraphLayoutEngine());
+var workingTree = new LibGit2SharpWorkingTreeService();
+var branches = new LibGit2SharpBranchService();
+var remotes = new GitProcessRemoteService();
 var settingsStore = new JsonSettingsStore(loggerFactory.CreateLogger<JsonSettingsStore>());
-var gitConfig     = new LibGit2SharpGitConfigService(loggerFactory.CreateLogger<LibGit2SharpGitConfigService>());
+var gitConfig = new LibGit2SharpGitConfigService(loggerFactory.CreateLogger<LibGit2SharpGitConfigService>());
 
 // Headless dump mode (dev/verification): gitxtr --dump <repoPath> [limit]
 if (args is ["--dump", var dumpPath, ..])
@@ -50,7 +50,7 @@ if (OperatingSystem.IsLinux())
 }
 
 // Optional CLI repo arg (dev convenience). If valid, ensure it's in the persisted repo list.
-string? cliArg  = Array.Find(args, a => !a.StartsWith("--"));
+string? cliArg = Array.Find(args, a => !a.StartsWith("--"));
 string? cliRepo = !string.IsNullOrEmpty(cliArg) && reader.IsValid(Path.GetFullPath(cliArg))
     ? Path.GetFullPath(cliArg) : null;
 if (cliRepo is not null)
@@ -77,26 +77,26 @@ var watcher = new RepoWatcherService(repoPath =>
 var dispatcher = new MessageDispatcher(
     new Dictionary<string, IMessageHandler>
     {
-        ["loadGraph"]        = new LoadGraphHandler(service, fallbackRepo, watcher, workingTree),
-        ["getWorkingTree"]   = new GetWorkingTreeHandler(workingTree, fallbackRepo),
-        ["workingTreeOp"]    = new WorkingTreeOpHandler(workingTree, fallbackRepo),
-        ["createCommit"]     = new CreateCommitHandler(workingTree, fallbackRepo),
+        ["loadGraph"] = new LoadGraphHandler(service, fallbackRepo, watcher, workingTree),
+        ["getWorkingTree"] = new GetWorkingTreeHandler(workingTree, fallbackRepo),
+        ["workingTreeOp"] = new WorkingTreeOpHandler(workingTree, fallbackRepo),
+        ["createCommit"] = new CreateCommitHandler(workingTree, fallbackRepo),
         ["getCommitDetails"] = new GetCommitDetailsHandler(service, fallbackRepo),
         ["getCommitsByPath"] = new GetCommitsByPathHandler(reader, fallbackRepo),
-        ["getFileHistory"]   = new GetFileHistoryHandler(service, fallbackRepo),
-        ["getBlame"]         = new GetBlameHandler(service, fallbackRepo),
-        ["getSettings"]      = new GetSettingsHandler(settingsStore, reader, cliRepo),
-        ["saveSettings"]     = new SaveSettingsHandler(settingsStore),
-        ["addRepo"]          = new AddRepoHandler(settingsStore, reader),
-        ["removeRepo"]       = new RemoveRepoHandler(settingsStore),
-        ["getGitIdentity"]   = new GetGitIdentityHandler(gitConfig, fallbackRepo),
-        ["setGitIdentity"]   = new SetGitIdentityHandler(gitConfig, fallbackRepo),
-        ["commitOp"]         = new CommitOpHandler(workingTree, fallbackRepo),
+        ["getFileHistory"] = new GetFileHistoryHandler(service, fallbackRepo),
+        ["getBlame"] = new GetBlameHandler(service, fallbackRepo),
+        ["getSettings"] = new GetSettingsHandler(settingsStore, reader, cliRepo),
+        ["saveSettings"] = new SaveSettingsHandler(settingsStore),
+        ["addRepo"] = new AddRepoHandler(settingsStore, reader),
+        ["removeRepo"] = new RemoveRepoHandler(settingsStore),
+        ["getGitIdentity"] = new GetGitIdentityHandler(gitConfig, fallbackRepo),
+        ["setGitIdentity"] = new SetGitIdentityHandler(gitConfig, fallbackRepo),
+        ["commitOp"] = new CommitOpHandler(workingTree, fallbackRepo),
         ["interactiveRebase"] = new InteractiveRebaseHandler(workingTree, fallbackRepo),
-        ["branchOp"]         = new BranchOpHandler(branches, fallbackRepo),
-        ["getBranches"]      = new GetBranchesHandler(branches, fallbackRepo),
-        ["remoteOp"]         = new RemoteOpHandler(remotes, fallbackRepo),
-        ["getRemotes"]       = new GetRemotesHandler(remotes, fallbackRepo),
+        ["branchOp"] = new BranchOpHandler(branches, fallbackRepo),
+        ["getBranches"] = new GetBranchesHandler(branches, fallbackRepo),
+        ["remoteOp"] = new RemoteOpHandler(remotes, fallbackRepo),
+        ["getRemotes"] = new GetRemotesHandler(remotes, fallbackRepo),
     },
     jsonOpts,
     loggerFactory.CreateLogger<MessageDispatcher>());

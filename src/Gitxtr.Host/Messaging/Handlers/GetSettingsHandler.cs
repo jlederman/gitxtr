@@ -15,9 +15,15 @@ internal sealed class GetSettingsHandler(ISettingsStore store, IRepositoryReader
             ?? st.Repos.FirstOrDefault(reader.IsValid);
         return new
         {
-            st.Theme, st.FontFamily, st.FontSize,
-            st.DetailHeight, st.DetailTopHeight, st.DetailMetaHeight,
-            st.Repos, st.LastRepo, st.DiffView,
+            st.Theme,
+            st.FontFamily,
+            st.FontSize,
+            st.DetailHeight,
+            st.DetailTopHeight,
+            st.DetailMetaHeight,
+            st.Repos,
+            st.LastRepo,
+            st.DiffView,
             currentRepo,
         };
     }

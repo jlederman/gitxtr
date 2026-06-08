@@ -12,7 +12,7 @@ internal sealed class SetGitIdentityHandler(IGitConfigService gitConfig, string 
             ? p.GetString() : fallbackRepo;
         var scope = ctx.Root.GetProperty("scope").GetString() == "local"
             ? GitConfigScope.Local : GitConfigScope.Global;
-        string name  = ctx.Root.TryGetProperty("name",  out var nv) ? nv.GetString() ?? "" : "";
+        string name = ctx.Root.TryGetProperty("name", out var nv) ? nv.GetString() ?? "" : "";
         string email = ctx.Root.TryGetProperty("email", out var ev) ? ev.GetString() ?? "" : "";
         gitConfig.Set(path, scope, name, email);
         return null;

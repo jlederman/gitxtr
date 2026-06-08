@@ -18,7 +18,7 @@ internal sealed class InteractiveRebaseHandler(IWorkingTreeService workingTree, 
         var steps = new List<RebaseStep>();
         foreach (var el in stepsEl.EnumerateArray())
         {
-            var sha    = el.TryGetProperty("sha",    out var s) ? s.GetString() ?? "" : "";
+            var sha = el.TryGetProperty("sha", out var s) ? s.GetString() ?? "" : "";
             var action = el.TryGetProperty("action", out var a) ? a.GetString() ?? "" : "";
             if (!string.IsNullOrEmpty(sha) && !string.IsNullOrEmpty(action))
                 steps.Add(new RebaseStep(sha, action));

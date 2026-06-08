@@ -16,9 +16,9 @@ internal sealed class WorkingTreeOpHandler(IWorkingTreeService workingTree, stri
 
         if (op is "stageAll" or "unstageAll" or "discardAll")
         {
-            if (op == "stageAll")       workingTree.StageAll(repoPath);
+            if (op == "stageAll") workingTree.StageAll(repoPath);
             else if (op == "unstageAll") workingTree.UnstageAll(repoPath);
-            else                         workingTree.DiscardAllUnstaged(repoPath);
+            else workingTree.DiscardAllUnstaged(repoPath);
             return null;
         }
 
@@ -28,7 +28,7 @@ internal sealed class WorkingTreeOpHandler(IWorkingTreeService workingTree, stri
 
         switch (op)
         {
-            case "stage":   workingTree.StageFile(repoPath, filePath);   break;
+            case "stage": workingTree.StageFile(repoPath, filePath); break;
             case "unstage": workingTree.UnstageFile(repoPath, filePath); break;
             case "discard": workingTree.DiscardFile(repoPath, filePath); break;
             default: throw new InvalidOperationException($"unknown op: {op}");

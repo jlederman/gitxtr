@@ -11,7 +11,7 @@ internal sealed class RemoveRepoHandler(ISettingsStore store) : IMessageHandler
         var settings = store.Load();
         settings = settings with
         {
-            Repos    = settings.Repos.Where(r => r != repoPath).ToArray(),
+            Repos = settings.Repos.Where(r => r != repoPath).ToArray(),
             LastRepo = settings.LastRepo == repoPath ? null : settings.LastRepo,
         };
         store.Save(settings);

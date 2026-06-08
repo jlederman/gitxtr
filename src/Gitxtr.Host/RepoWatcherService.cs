@@ -50,7 +50,7 @@ internal sealed class RepoWatcherService(Action<string> onChanged, ILogger<RepoW
         // ── Polling fallback ─────────────────────────────────────────────────
         _pollTimer = new Timer(_ => Poll(repoPath, gitDir), null,
             dueTime: TimeSpan.FromSeconds(2),
-            period:  TimeSpan.FromSeconds(2));
+            period: TimeSpan.FromSeconds(2));
     }
 
     private void Poll(string repoPath, string gitDir)

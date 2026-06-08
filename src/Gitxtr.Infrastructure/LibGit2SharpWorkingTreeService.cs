@@ -37,7 +37,7 @@ public sealed class LibGit2SharpWorkingTreeService : IWorkingTreeService
         foreach (var entry in status.OrderBy(e => e.FilePath))
         {
             var state = entry.State;
-            bool inWorkdir  = state.HasFlag(FileStatus.ModifiedInWorkdir) ||
+            bool inWorkdir = state.HasFlag(FileStatus.ModifiedInWorkdir) ||
                               state.HasFlag(FileStatus.DeletedFromWorkdir);
             bool isUntracked = state.HasFlag(FileStatus.NewInWorkdir);
 
@@ -132,10 +132,10 @@ public sealed class LibGit2SharpWorkingTreeService : IWorkingTreeService
     public void CreateCommit(string repoPath, string message, bool amend)
     {
         using var repo = new Repository(repoPath);
-        var name  = repo.Config.GetValueOrDefault<string>("user.name")
+        var name = repo.Config.GetValueOrDefault<string>("user.name")
                     ?? throw new InvalidOperationException("Git user.name is not configured. Set it with: git config --global user.name \"Your Name\"");
         var email = repo.Config.GetValueOrDefault<string>("user.email") ?? "";
-        var sig   = new Signature(name, email, DateTimeOffset.Now);
+        var sig = new Signature(name, email, DateTimeOffset.Now);
         repo.Commit(message, sig, sig, new CommitOptions { AmendPreviousCommit = amend });
     }
 
@@ -144,10 +144,10 @@ public sealed class LibGit2SharpWorkingTreeService : IWorkingTreeService
         using var repo = new Repository(repoPath);
         var commit = repo.Lookup<Commit>(sha)
             ?? throw new InvalidOperationException($"Commit '{sha}' not found");
-        var name  = repo.Config.GetValueOrDefault<string>("user.name")
+        var name = repo.Config.GetValueOrDefault<string>("user.name")
                     ?? throw new InvalidOperationException("Git user.name is not configured");
         var email = repo.Config.GetValueOrDefault<string>("user.email") ?? "";
-        var sig   = new Signature(name, email, DateTimeOffset.Now);
+        var sig = new Signature(name, email, DateTimeOffset.Now);
         var result = repo.Revert(commit, sig);
         if (result.Status == RevertStatus.Conflicts)
             throw new InvalidOperationException("Revert resulted in conflicts — resolve them manually.");
@@ -158,10 +158,10 @@ public sealed class LibGit2SharpWorkingTreeService : IWorkingTreeService
         using var repo = new Repository(repoPath);
         var commit = repo.Lookup<Commit>(sha)
             ?? throw new InvalidOperationException($"Commit '{sha}' not found");
-        var name  = repo.Config.GetValueOrDefault<string>("user.name")
+        var name = repo.Config.GetValueOrDefault<string>("user.name")
                     ?? throw new InvalidOperationException("Git user.name is not configured");
         var email = repo.Config.GetValueOrDefault<string>("user.email") ?? "";
-        var sig   = new Signature(name, email, DateTimeOffset.Now);
+        var sig = new Signature(name, email, DateTimeOffset.Now);
         var result = repo.CherryPick(commit, sig);
         if (result.Status == CherryPickStatus.Conflicts)
             throw new InvalidOperationException("Cherry-pick resulted in conflicts — resolve them manually.");
@@ -177,10 +177,10 @@ public sealed class LibGit2SharpWorkingTreeService : IWorkingTreeService
             throw new InvalidOperationException(
                 "Cannot rebase: there are uncommitted changes. Commit or discard them first.");
 
-        var name  = repo.Config.GetValueOrDefault<string>("user.name")
+        var name = repo.Config.GetValueOrDefault<string>("user.name")
                     ?? throw new InvalidOperationException("Git user.name is not configured");
         var email = repo.Config.GetValueOrDefault<string>("user.email") ?? "";
-        var sig   = new Signature(name, email, DateTimeOffset.Now);
+        var sig = new Signature(name, email, DateTimeOffset.Now);
 
         // The base is the parent of the oldest step (steps[0]).
         var firstOriginal = repo.Lookup<Commit>(steps[0].Sha)
@@ -204,7 +204,7 @@ public sealed class LibGit2SharpWorkingTreeService : IWorkingTreeService
     private static void ExecuteSteps(Repository repo, Signature sig, IReadOnlyList<RebaseStep> steps)
     {
         Commit? groupBase = null;   // HEAD before the pick that started the current squash group
-        string? groupMsg  = null;
+        string? groupMsg = null;
         bool hasPickedAny = false;
 
         void FlushGroup()
@@ -213,7 +213,7 @@ public sealed class LibGit2SharpWorkingTreeService : IWorkingTreeService
             repo.Reset(ResetMode.Soft, groupBase);
             repo.Commit(groupMsg!, sig, sig);
             groupBase = null;
-            groupMsg  = null;
+            groupMsg = null;
         }
 
         foreach (var step in steps)
@@ -240,7 +240,7 @@ public sealed class LibGit2SharpWorkingTreeService : IWorkingTreeService
                 {
                     // Anchor the group at the parent of the most-recent pick.
                     groupBase = repo.Head.Tip.Parents.First();
-                    groupMsg  = repo.Head.Tip.Message.TrimEnd();
+                    groupMsg = repo.Head.Tip.Message.TrimEnd();
                 }
 
                 var result = repo.CherryPick(original, sig);
@@ -258,11 +258,11 @@ public sealed class LibGit2SharpWorkingTreeService : IWorkingTreeService
 
     private static string StatusChar(ChangeKind kind) => kind switch
     {
-        ChangeKind.Added   => "A",
+        ChangeKind.Added => "A",
         ChangeKind.Deleted => "D",
         ChangeKind.Renamed => "R",
-        ChangeKind.Copied  => "C",
-        _                  => "M",
+        ChangeKind.Copied => "C",
+        _ => "M",
     };
 
     private static string NewFilePatch(string repoPath, string filePath)

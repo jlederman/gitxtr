@@ -8,12 +8,12 @@ import { viteSingleFile } from "vite-plugin-singlefile";
 // Dev (npm run dev): a normal HMR dev server on :5173. Point Photino at it with GITXTR_DEV_URL
 // (see Gitxtr.Host/Program.cs) for live reload while editing web/.
 export default defineConfig(({ command }) => ({
-  base: command === "build" ? "./" : "/",
-  plugins: [viteSingleFile()],
-  server: { port: 5173, strictPort: true },
-  build: {
-    outDir: "../src/Gitxtr.Host/obj/webdist",
-    emptyOutDir: true,
-    target: "es2022",
-  },
+    base: command === "build" ? "./" : "/",
+    plugins: [viteSingleFile()],
+    server: { port: 5173, strictPort: true },
+    build: {
+        outDir: "../src/Gitxtr.Host/obj/webdist",
+        emptyOutDir: true,
+        target: "es2022",
+    },
 }));

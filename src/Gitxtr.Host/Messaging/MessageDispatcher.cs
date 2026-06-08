@@ -17,7 +17,7 @@ internal sealed class MessageDispatcher(
         {
             using var doc = JsonDocument.Parse(raw);
             var root = doc.RootElement;
-            id   = root.GetProperty("id").GetString() ?? "";
+            id = root.GetProperty("id").GetString() ?? "";
             type = root.GetProperty("type").GetString() ?? "";
 
             if (!handlers.TryGetValue(type, out var handler))

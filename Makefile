@@ -10,7 +10,7 @@ REPO ?=
 RID     ?= osx-arm64
 VERSION ?= 0.0.1
 
-.PHONY: help web app run build test install clean pack publish-win
+.PHONY: help web app run build test format install clean pack publish-win
 
 help:
 	@echo "gitxtr make targets:"
@@ -19,6 +19,7 @@ help:
 	@echo "  make run [REPO=/path]   # production run (built bundle, no dev server)"
 	@echo "  make build              # dotnet build (also builds the web bundle)"
 	@echo "  make test               # run the domain tests"
+	@echo "  make format             # dotnet format (C#) + prettier (web)"
 	@echo "  make install            # npm install + dotnet restore"
 	@echo "  make pack [RID= VERSION=] # local unsigned installer via Velopack → ./release"
 	@echo "  make publish-win [RID=win-arm64] # cross-compile Windows build → ./publish (copy to VM for testing)"
@@ -42,6 +43,11 @@ build:
 
 test:
 	dotnet test tests/Gitxtr.Domain.Tests
+
+# Format the whole codebase: C# via dotnet format (.editorconfig), web via prettier (.prettierrc).
+format:
+	dotnet format whitespace gitxtr.slnx
+	cd web && npm run format
 
 install:
 	cd web && npm install

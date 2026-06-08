@@ -19,8 +19,8 @@ internal sealed class RemoteOpHandler(IRemoteService remotes, string fallbackRep
         string output = op switch
         {
             "fetch" => remotes.Fetch(repoPath, remote, Flag("prune")),
-            "pull"  => remotes.Pull(repoPath, remote, Flag("rebase")),
-            "push"  => remotes.Push(repoPath, remote ?? "", Str("branch"), Flag("force"), Flag("setUpstream")),
+            "pull" => remotes.Pull(repoPath, remote, Flag("rebase")),
+            "push" => remotes.Push(repoPath, remote ?? "", Str("branch"), Flag("force"), Flag("setUpstream")),
             _ => throw new InvalidOperationException($"unknown remote op: {op}"),
         };
 
