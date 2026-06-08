@@ -10,7 +10,7 @@ REPO ?=
 RID     ?= osx-arm64
 VERSION ?= 0.0.1
 
-.PHONY: help web app run build test install clean pack
+.PHONY: help web app run build test install clean pack publish-win
 
 help:
 	@echo "gitxtr make targets:"
@@ -21,6 +21,7 @@ help:
 	@echo "  make test               # run the domain tests"
 	@echo "  make install            # npm install + dotnet restore"
 	@echo "  make pack [RID= VERSION=] # local unsigned installer via Velopack → ./release"
+	@echo "  make publish-win [RID=win-arm64] # cross-compile Windows build → ./publish (copy to VM for testing)"
 	@echo "  make clean              # dotnet clean"
 
 # Terminal 1 — frontend: Vite dev server with hot module reloading on :5173.
@@ -51,6 +52,15 @@ clean:
 
 # Self-contained publish + Velopack pack for the current OS (unsigned). Needs the vpk tool:
 #   dotnet tool install -g vpk
+# vpk does not support cross-OS packaging — always run for the OS you're on.
 pack:
+	rm -rf publish
 	dotnet publish $(APP)/Gitxtr.Host.csproj -c Release -r $(RID) --self-contained true -o publish
 	vpk pack -u gitxtr -v $(VERSION) -p publish --packTitle gitxtr -o release
+
+# Cross-compile a Windows build from macOS/Linux for manual VM testing.
+# Copy ./publish/ to the Windows VM and run gitxtr.exe directly (no installer).
+# For signed installers use the GitHub Actions release workflow instead.
+publish-win:
+	rm -rf publish
+	dotnet publish $(APP)/Gitxtr.Host.csproj -c Release -r $(RID) --self-contained true -o publish
