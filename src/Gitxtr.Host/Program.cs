@@ -106,32 +106,52 @@ string indexPath = Path.Combine(AppContext.BaseDirectory, "wwwroot", "index.html
 // Run `npm run dev`, then `GITXTR_DEV_URL=http://localhost:5173 dotnet run --project src/Gitxtr.Host -- <repo>`.
 string? devUrl = Environment.GetEnvironmentVariable("GITXTR_DEV_URL");
 
-window = new PhotinoWindow()
-    .SetTitle("gitxtr")
-    .SetUseOsDefaultSize(false)
-    .SetSize(1100, 760)
-    .Center()
-    .RegisterWebMessageReceivedHandler((sender, message) =>
-    {
-        // Handle off the UI thread: git/network ops would otherwise block the WebKit
-        // thread that repaints the webview, freezing the window. The bridge correlates
-        // responses by id, so out-of-order replies are fine. SendWebMessage must run on
-        // the UI thread, so post the result back via Invoke.
-        var w = (PhotinoWindow)sender!;
-        Task.Run(() =>
+void RunWindow()
+{
+    window = new PhotinoWindow()
+        .SetTitle("gitxtr")
+        .SetUseOsDefaultSize(false)
+        .SetSize(1100, 760)
+        .Center()
+        .RegisterWebMessageReceivedHandler((sender, message) =>
         {
-            string response = dispatcher.Dispatch(w, message);
-            w.Invoke(() => w.SendWebMessage(response));
-        });
-    })
-    .Load(string.IsNullOrEmpty(devUrl) ? indexPath : devUrl);
+            // Handle off the UI thread: git/network ops would otherwise block the WebKit
+            // thread that repaints the webview, freezing the window. The bridge correlates
+            // responses by id, so out-of-order replies are fine. SendWebMessage must run on
+            // the UI thread, so post the result back via Invoke.
+            var w = (PhotinoWindow)sender!;
+            Task.Run(() =>
+            {
+                string response = dispatcher.Dispatch(w, message);
+                w.Invoke(() => w.SendWebMessage(response));
+            });
+        })
+        .Load(string.IsNullOrEmpty(devUrl) ? indexPath : devUrl);
 
-// Check GitHub Releases for a newer build in the background and stage it to apply on next
-// launch (no mid-session restart). Skipped in dev and when not installed via Velopack.
-if (string.IsNullOrEmpty(devUrl))
-    _ = Updater.CheckInBackgroundAsync(loggerFactory.CreateLogger("Updater"));
+    // Check GitHub Releases for a newer build in the background and stage it to apply on next
+    // launch (no mid-session restart). Skipped in dev and when not installed via Velopack.
+    if (string.IsNullOrEmpty(devUrl))
+        _ = Updater.CheckInBackgroundAsync(loggerFactory.CreateLogger("Updater"));
 
-window.WaitForClose();
+    window.WaitForClose();
+}
+
+// Pitfall #2: WebView2 (Windows) must be created and pumped on a single-threaded COM
+// apartment (STA). The top-level entry point runs as MTA, where Photino's WebView2 init
+// fails silently and the window shows blank (empty user-data folder, no error surfaced).
+// Photino captures its owning thread in the PhotinoWindow constructor, so the window must be
+// BUILT and closed on the same STA thread. macOS/Linux keep the UI on the process main
+// thread (Cocoa/GTK affinity), where COM apartments don't apply and SetApartmentState throws.
+if (OperatingSystem.IsWindows())
+{
+    var uiThread = new Thread(RunWindow);
+    uiThread.SetApartmentState(ApartmentState.STA);
+    uiThread.Start();
+    uiThread.Join();
+}
+else
+    RunWindow();
+
 return 0;
 
 static void DumpAscii(GraphView view)
