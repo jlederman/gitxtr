@@ -30,6 +30,11 @@ jobs:
             rid: win-x64
           - os: windows-latest
             rid: win-arm64
+            # win-x64 and win-arm64 both default to Velopack's "win" channel, producing identical
+            # asset names (releases.win.json, gitxtr-win-Setup.exe…) that collide in one GitHub
+            # release. Give arm64 its own channel; x64 stays on the default "win" so existing
+            # installs keep updating. The app picks the matching channel at runtime (Updater.cs).
+            channel: win-arm64
           - os: ubuntu-latest
             rid: linux-x64
     runs-on: ${{ matrix.os }}
@@ -99,6 +104,9 @@ jobs:
         timeout-minutes: 10
         run: |
           ARGS=(-u gitxtr -v "${{ steps.ver.outputs.version }}" -p publish --packTitle gitxtr)
+          if [ -n "${{ matrix.channel }}" ]; then
+            ARGS+=(--channel "${{ matrix.channel }}")
+          fi
           if [ "$RUNNER_OS" = "macOS" ] && [ -n "$APPLE_CERT_P12" ]; then
             ARGS+=(--signAppIdentity "$APPLE_SIGN_IDENTITY" \
                    --signEntitlements build/gitxtr.entitlements \
@@ -122,9 +130,13 @@ jobs:
 
       - name: Upload to GitHub Release
         run: |
-          vpk upload github --repoUrl "https://github.com/${{ github.repository }}" \
-            --merge --releaseName "gitxtr ${{ steps.ver.outputs.version }}" \
-            --tag "v${{ steps.ver.outputs.version }}" --token "${{ secrets.GITHUB_TOKEN }}"
+          ARGS=(github --repoUrl "https://github.com/${{ github.repository }}"
+                --merge --releaseName "gitxtr ${{ steps.ver.outputs.version }}"
+                --tag "v${{ steps.ver.outputs.version }}" --token "${{ secrets.GITHUB_TOKEN }}")
+          if [ -n "${{ matrix.channel }}" ]; then
+            ARGS+=(--channel "${{ matrix.channel }}")
+          fi
+          vpk upload "${ARGS[@]}"
 
   finalize:
     needs: release

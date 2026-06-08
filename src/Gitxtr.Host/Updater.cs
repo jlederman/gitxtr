@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
 using Velopack;
 using Velopack.Sources;
@@ -17,7 +18,12 @@ internal static class Updater
     {
         try
         {
-            var mgr = new UpdateManager(new GithubSource(RepoUrl, null, prerelease: false));
+            // win-arm64 ships on its own Velopack channel (see release.yml); every other RID stays
+            // on the default channel. Match it here so an arm64 install reads releases.win-arm64.json.
+            var options = OperatingSystem.IsWindows() && RuntimeInformation.OSArchitecture == Architecture.Arm64
+                ? new UpdateOptions { ExplicitChannel = "win-arm64" }
+                : null;
+            var mgr = new UpdateManager(new GithubSource(RepoUrl, null, prerelease: false), options);
             if (!mgr.IsInstalled) return;
 
             var info = await mgr.CheckForUpdatesAsync();
