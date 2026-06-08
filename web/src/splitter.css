@@ -1,0 +1,33 @@
+/* Drag-to-resize splitter handles (vertical + detail panes). Owned by splitter.ts. */
+.vsplit {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: var(--detail-height, 320px);
+    height: 7px;
+    margin-bottom: -4px;
+    cursor: row-resize;
+    z-index: 2;
+}
+.vsplit:hover {
+    background: var(--accent);
+    opacity: 0.4;
+}
+.dsplit {
+    flex: 0 0 auto;
+    height: 6px;
+    cursor: row-resize;
+    background: var(--border);
+}
+.dsplit:hover {
+    background: var(--accent);
+}
+.msplit {
+    flex: 0 0 auto;
+    height: 6px;
+    cursor: row-resize;
+    background: var(--border);
+}
+.msplit:hover {
+    background: var(--accent);
+}

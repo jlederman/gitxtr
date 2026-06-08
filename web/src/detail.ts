@@ -1,3 +1,4 @@
+import "./detail.css";
 import { request } from "./bridge";
 import { getCurrentRepo } from "./repos";
 import { showContextMenu } from "./contextMenu";

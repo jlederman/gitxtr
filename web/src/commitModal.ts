@@ -1,3 +1,4 @@
+import "./commitModal.css";
 import { request } from "./bridge";
 import { getCurrentRepo } from "./repos";
 import { renderUnified } from "./detail";

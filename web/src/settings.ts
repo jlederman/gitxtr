@@ -1,3 +1,4 @@
+import "./settings.css";
 import { request } from "./bridge";
 import { THEMES, getTheme, applyThemeCss, applyFontCss } from "./themes";
 import { addRepo, renderManager } from "./repos";

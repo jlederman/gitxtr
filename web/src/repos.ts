@@ -1,3 +1,4 @@
+import "./repos.css";
 import { request } from "./bridge";
 
 // Owns the active-repo state + the header repo dropdown and the Settings "Repositories" list.

@@ -1,0 +1,28 @@
+/* Right-click context menu. Owned by contextMenu.ts. */
+/* ── Context menu ───────────────────────────────────────────────────────── */
+.ctx-menu {
+    position: fixed;
+    z-index: 100;
+    min-width: 160px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 0;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+}
+.ctx-menu[hidden] {
+    display: none;
+}
+.ctx-menu button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 6px 14px;
+    color: var(--fg);
+}
+.ctx-menu button:hover {
+    background: var(--sel);
+}

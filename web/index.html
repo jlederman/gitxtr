@@ -6,11 +6,11 @@
         <title>gitxtr</title>
     </head>
     <body>
-        <div id="header">
-            <span id="title">gitxtr</span>
-            <select id="repo-select" title="Switch repository"></select>
-            <select id="branch-select" title="Switch branch"></select>
-            <button id="add-repo" title="Add a repository">+ Repo</button>
+        <div class="header">
+            <span class="app-title">gitxtr</span>
+            <select id="repo-select" class="repo-select" title="Switch repository"></select>
+            <select id="branch-select" class="branch-select" title="Switch branch"></select>
+            <button id="add-repo" class="add-repo" title="Add a repository">+ Repo</button>
             <button id="btn-fetch" class="remote-btn" title="Fetch from remote" hidden>
                 Fetch
             </button>
@@ -18,56 +18,64 @@
             <button id="btn-push" class="remote-btn" title="Push to remote" hidden>Push</button>
             <input
                 id="search"
+                class="search"
                 type="search"
                 placeholder="Filter commits…"
                 autocomplete="off"
                 spellcheck="false"
             />
-            <button id="search-hide" title="Hide non-matching commits" hidden>Hide</button>
-            <span id="status"></span>
-            <button id="toggle-view" title="Toggle simple / complex view (V)">Simple</button>
+            <button id="search-hide" class="search-hide" title="Hide non-matching commits" hidden>
+                Hide
+            </button>
+            <span id="status" class="status"></span>
+            <button id="toggle-view" class="toggle-view" title="Toggle simple / complex view (V)">
+                Simple
+            </button>
             <button
                 id="open-shortcuts"
+                class="open-shortcuts"
                 title="Keyboard shortcuts (?)"
                 aria-label="Keyboard shortcuts"
             >
                 ?
             </button>
-            <button id="open-settings" title="Settings" aria-label="Settings">⚙</button>
+            <button id="open-settings" class="open-settings" title="Settings" aria-label="Settings">
+                ⚙
+            </button>
         </div>
-        <div id="viewport" tabindex="0"><canvas id="graph"></canvas></div>
-        <div id="vsplit" title="Drag to resize"></div>
-        <div id="detail">
-            <div id="detail-top">
-                <div id="detail-meta"></div>
-                <div id="msplit" title="Drag to resize"></div>
-                <div id="detail-files" tabindex="0"></div>
+        <div id="viewport" class="viewport" tabindex="0"><canvas id="graph"></canvas></div>
+        <div id="vsplit" class="vsplit" title="Drag to resize"></div>
+        <div id="detail" class="detail">
+            <div id="detail-top" class="detail-top">
+                <div id="detail-meta" class="detail-meta"></div>
+                <div id="msplit" class="msplit" title="Drag to resize"></div>
+                <div id="detail-files" class="detail-files" tabindex="0"></div>
             </div>
-            <div id="dsplit" title="Drag to resize"></div>
-            <div id="detail-diff" class="diff-pane">
-                <div id="diff-toolbar">
+            <div id="dsplit" class="dsplit" title="Drag to resize"></div>
+            <div class="diff-pane detail-diff">
+                <div id="diff-toolbar" class="diff-toolbar">
                     <div class="seg">
                         <button data-mode="unified" class="active">Unified</button>
                         <button data-mode="split">Split</button>
                     </div>
                 </div>
-                <div id="diff-body"></div>
+                <div id="diff-body" class="diff-body"></div>
             </div>
         </div>
 
-        <div id="settings" hidden>
-            <div id="settings-bar">
+        <div id="settings" class="settings" hidden>
+            <div class="settings-bar">
                 <span class="title">Settings</span>
                 <button id="settings-close">Done</button>
             </div>
-            <div id="settings-body">
-                <nav id="settings-cats">
+            <div class="settings-body">
+                <nav id="settings-cats" class="settings-cats">
                     <button data-cat="appearance" class="active">Appearance</button>
                     <button data-cat="git">Git Identity</button>
                     <button data-cat="repos">Repositories</button>
                     <button data-cat="about">About</button>
                 </nav>
-                <div id="settings-panes">
+                <div id="settings-panes" class="settings-panes">
                     <section data-pane="appearance">
                         <h3>Appearance</h3>
                         <label
@@ -80,8 +88,10 @@
                         <label
                             >Font size <input id="set-fontsize" type="number" min="9" max="28"
                         /></label>
-                        <div class="row"><span id="appearance-status"></span></div>
-                        <div id="theme-preview">
+                        <div class="row">
+                            <span id="appearance-status" class="appearance-status"></span>
+                        </div>
+                        <div class="theme-preview">
                             <div class="tp-hdr">
                                 <span class="tp-hdr-title">gitxtr</span>
                                 <span class="tp-hdr-chip">my-project ▼</span>
@@ -263,7 +273,7 @@
                         /></label>
                         <div class="row">
                             <button id="git-save">Save git identity</button>
-                            <span id="git-status"></span>
+                            <span id="git-status" class="git-status"></span>
                         </div>
                     </section>
                     <section data-pane="repos" hidden>
@@ -271,7 +281,7 @@
                         <div class="row">
                             <button id="add-repo-settings">Add repository…</button>
                         </div>
-                        <div id="repo-list"></div>
+                        <div id="repo-list" class="repo-list"></div>
                     </section>
                     <section data-pane="about" hidden>
                         <h3>About</h3>
@@ -281,13 +291,13 @@
             </div>
         </div>
 
-        <div id="shortcuts" hidden>
-            <div id="shortcuts-card">
-                <div id="shortcuts-bar">
+        <div id="shortcuts" class="shortcuts" hidden>
+            <div class="shortcuts-card">
+                <div class="shortcuts-bar">
                     <span class="title">Keyboard Shortcuts</span>
                     <button id="shortcuts-close">Done</button>
                 </div>
-                <div id="shortcuts-body">
+                <div class="shortcuts-body">
                     <section>
                         <h3>Commit Graph</h3>
                         <table>
@@ -359,56 +369,63 @@
             </div>
         </div>
 
-        <div id="commit-modal" hidden>
-            <div id="commit-card">
-                <div id="commit-hdr">
+        <div id="commit-modal" class="commit-modal" hidden>
+            <div class="commit-card">
+                <div class="commit-hdr">
                     <span class="title">Commit</span>
-                    <button id="commit-modal-close" title="Close (Esc)">×</button>
+                    <button id="commit-modal-close" class="commit-modal-close" title="Close (Esc)">
+                        ×
+                    </button>
                 </div>
-                <div id="commit-workspace">
-                    <div id="commit-files-pane" tabindex="0"></div>
-                    <div id="commit-diff-pane" class="diff-pane"></div>
+                <div class="commit-workspace">
+                    <div id="commit-files-pane" class="commit-files-pane" tabindex="0"></div>
+                    <div id="commit-diff-pane" class="diff-pane commit-diff-pane"></div>
                 </div>
-                <div id="commit-footer">
+                <div class="commit-footer">
                     <textarea
                         id="commit-msg-input"
+                        class="commit-msg-input"
                         placeholder="Commit message"
                         spellcheck="false"
                     ></textarea>
-                    <div id="commit-footer-row">
-                        <label id="commit-amend-label">
+                    <div class="commit-footer-row">
+                        <label class="commit-amend-label">
                             <input type="checkbox" id="commit-amend-chk" /> Amend last commit
                         </label>
-                        <span id="commit-msg-err"></span>
-                        <button id="do-commit-btn" disabled>Commit</button>
+                        <span id="commit-msg-err" class="commit-msg-err"></span>
+                        <button id="do-commit-btn" class="do-commit-btn" disabled>Commit</button>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div id="rebase-modal" hidden>
-            <div id="rebase-card">
-                <div id="rebase-hdr">
+        <div id="rebase-modal" class="rebase-modal" hidden>
+            <div class="rebase-card">
+                <div class="rebase-hdr">
                     <span class="title">Interactive Rebase</span>
-                    <button id="rebase-modal-close" title="Close (Esc)">×</button>
+                    <button id="rebase-modal-close" class="rebase-modal-close" title="Close (Esc)">
+                        ×
+                    </button>
                 </div>
-                <div id="rebase-info"></div>
-                <div id="rebase-list"></div>
-                <div id="rebase-footer">
-                    <span id="rebase-err"></span>
-                    <button id="rebase-cancel-btn">Cancel</button>
-                    <button id="do-rebase-btn">Rebase</button>
+                <div id="rebase-info" class="rebase-info"></div>
+                <div id="rebase-list" class="rebase-list"></div>
+                <div class="rebase-footer">
+                    <span id="rebase-err" class="rebase-err"></span>
+                    <button id="rebase-cancel-btn" class="rebase-cancel-btn">Cancel</button>
+                    <button id="do-rebase-btn" class="do-rebase-btn">Rebase</button>
                 </div>
             </div>
         </div>
 
-        <div id="remote-modal" hidden>
-            <div id="remote-card">
-                <div id="remote-hdr">
+        <div id="remote-modal" class="remote-modal" hidden>
+            <div class="remote-card">
+                <div class="remote-hdr">
                     <span class="title" id="remote-title">Remote</span>
-                    <button id="remote-modal-close" title="Close (Esc)">×</button>
+                    <button id="remote-modal-close" class="remote-modal-close" title="Close (Esc)">
+                        ×
+                    </button>
                 </div>
-                <div id="remote-body">
+                <div class="remote-body">
                     <label class="rf-row" id="rf-remote-row">
                         <span class="rf-label">Remote</span>
                         <select id="rf-remote"></select>
@@ -440,39 +457,41 @@
                     <label class="rf-check" id="rf-upstream-row"
                         ><input type="checkbox" id="rf-upstream" /> Set as upstream</label
                     >
-                    <pre id="remote-output" hidden></pre>
+                    <pre id="remote-output" class="remote-output" hidden></pre>
                 </div>
-                <div id="remote-footer">
-                    <span id="remote-msg"></span>
-                    <button id="remote-cancel-btn">Cancel</button>
-                    <button id="do-remote-btn">Go</button>
+                <div class="remote-footer">
+                    <span id="remote-msg" class="remote-msg"></span>
+                    <button id="remote-cancel-btn" class="remote-cancel-btn">Cancel</button>
+                    <button id="do-remote-btn" class="do-remote-btn">Go</button>
                 </div>
             </div>
         </div>
 
-        <div id="fh-modal" hidden>
-            <div id="fh-card">
-                <div id="fh-hdr">
+        <div id="fh-modal" class="fh-modal" hidden>
+            <div class="fh-card">
+                <div class="fh-hdr">
                     <span class="title">File history</span>
-                    <span id="fh-path"></span>
-                    <div id="fh-tabs">
+                    <span id="fh-path" class="fh-path"></span>
+                    <div id="fh-tabs" class="fh-tabs">
                         <button data-tab="history">History</button>
                         <button data-tab="blame">Blame</button>
                     </div>
-                    <button id="fh-modal-close" title="Close (Esc)">×</button>
+                    <button id="fh-modal-close" class="fh-modal-close" title="Close (Esc)">
+                        ×
+                    </button>
                 </div>
-                <div id="fh-workspace">
-                    <div id="fh-list" tabindex="0"></div>
-                    <div id="fh-detail" class="diff-pane"></div>
+                <div class="fh-workspace">
+                    <div id="fh-list" class="fh-list" tabindex="0"></div>
+                    <div id="fh-detail" class="diff-pane fh-detail"></div>
                 </div>
-                <div id="fh-footer">
-                    <span id="fh-hint"></span>
-                    <button id="fh-goto-btn">Show in graph</button>
+                <div class="fh-footer">
+                    <span id="fh-hint" class="fh-hint"></span>
+                    <button id="fh-goto-btn" class="fh-goto-btn">Show in graph</button>
                 </div>
             </div>
         </div>
 
-        <div id="ctx-menu" hidden></div>
+        <div id="ctx-menu" class="ctx-menu" hidden></div>
 
         <script type="module" src="/src/main.ts"></script>
     </body>

@@ -1,3 +1,4 @@
+import "./rebaseModal.css";
 import { request } from "./bridge";
 import type { Row } from "./types";
 

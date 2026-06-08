@@ -1,3 +1,5 @@
+import "./splitter.css";
+
 // A draggable horizontal divider. `measure` maps the pointer's clientY to the desired size (px)
 // of the region being resized; the result is clamped to [min, max()]. onResize fires live during
 // the drag; onCommit fires once on release (to persist).

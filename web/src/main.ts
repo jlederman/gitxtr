@@ -1,4 +1,5 @@
 import "./style.css";
+import "./main.css";
 import { request, onPush } from "./bridge";
 import { GraphRenderer } from "./graphRenderer";
 import {

@@ -1,3 +1,4 @@
+import "./remoteModal.css";
 import { request } from "./bridge";
 
 export type RemoteMode = "fetch" | "pull" | "push";

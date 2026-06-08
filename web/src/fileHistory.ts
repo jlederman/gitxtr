@@ -1,3 +1,4 @@
+import "./fileHistory.css";
 import { request } from "./bridge";
 import { getCurrentRepo } from "./repos";
 import { renderUnified } from "./detail";
@@ -209,7 +210,7 @@ function renderBlame(blame: FileBlame): void {
         detailEl().innerHTML = `<div class="fh-msg">Empty file.</div>`;
         return;
     }
-    let html = `<div id="fh-blame">`;
+    let html = `<div class="fh-blame">`;
     let prev = "";
     for (const l of blame.lines) {
         // Only the first line of a run of same-commit lines shows the chip.

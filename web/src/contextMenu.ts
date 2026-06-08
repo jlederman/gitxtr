@@ -1,3 +1,5 @@
+import "./contextMenu.css";
+
 type MenuItem = { label: string; action: string };
 type ActionHandler = (action: string, payload: unknown) => void;
 
