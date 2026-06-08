@@ -32,6 +32,14 @@
                 Simple
             </button>
             <button
+                id="open-terminal"
+                class="open-terminal"
+                title="Toggle terminal (Ctrl+`)"
+                aria-label="Toggle terminal"
+            >
+                &gt;_
+            </button>
+            <button
                 id="open-shortcuts"
                 class="open-shortcuts"
                 title="Keyboard shortcuts (?)"
@@ -63,6 +71,15 @@
             </div>
         </div>
 
+        <div id="terminal" class="terminal-pane">
+            <div id="term-resize" class="term-resize" title="Drag to resize"></div>
+            <div class="term-bar">
+                <span class="term-title">Terminal</span>
+                <button id="term-close" class="term-close" title="Close terminal">×</button>
+            </div>
+            <div id="term-host" class="term-host"></div>
+        </div>
+
         <div id="settings" class="settings" hidden>
             <div class="settings-bar">
                 <span class="title">Settings</span>
@@ -88,6 +105,14 @@
                         <label
                             >Font size <input id="set-fontsize" type="number" min="9" max="28"
                         /></label>
+                        <label
+                            >Terminal hotkey
+                            <button
+                                id="set-term-hotkey"
+                                type="button"
+                                class="hotkey-capture"
+                            ></button>
+                        </label>
                         <div class="row">
                             <span id="appearance-status" class="appearance-status"></span>
                         </div>

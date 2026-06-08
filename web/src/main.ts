@@ -17,6 +17,7 @@ import { initSettings, applyAppearance, type Settings } from "./settings";
 import { initSplitter } from "./splitter";
 import { initRepos, getCurrentRepo } from "./repos";
 import { initContextMenu, showContextMenu } from "./contextMenu";
+import { initTerminal } from "./terminal";
 import type { GraphView, Row } from "./types";
 
 // getSettings also returns a resolved currentRepo (CLI arg ▸ lastRepo ▸ first repo) — transient.
@@ -97,6 +98,7 @@ const DEFAULT_SETTINGS: BootSettings = {
     detailMetaHeight: 120,
     diffView: "unified",
     viewMode: "complex",
+    terminalHotkey: "Ctrl+Backquote",
     repos: [],
     lastRepo: null,
     currentRepo: null,
@@ -242,6 +244,7 @@ async function boot(): Promise<void> {
             statusEl.textContent = `commit ${sha.slice(0, 7)} is not in the loaded graph`;
         renderer.focus();
     });
+    initTerminal(settings.terminalHotkey);
 
     initContextMenu((action, payload) => {
         if (viewMode === "simple") return;
@@ -345,30 +348,34 @@ async function boot(): Promise<void> {
     });
 
     window.addEventListener("keydown", (e) => {
-        if (e.key === "F5" || ((e.metaKey || e.ctrlKey) && e.key === "r")) {
+        // The terminal toggle hotkey is handled in terminal.ts (capture phase).
+        // Skip app/single-key shortcuts while typing in a field or the focused terminal
+        // (xterm's input is a <textarea>), so keystrokes reach the shell instead.
+        const typing =
+            document.activeElement instanceof HTMLInputElement ||
+            document.activeElement instanceof HTMLTextAreaElement;
+
+        if ((e.key === "F5" || ((e.metaKey || e.ctrlKey) && e.key === "r")) && !typing) {
             e.preventDefault();
             const repo = getCurrentRepo();
             if (repo) void loadGraph(repo);
         }
-        if (e.key === "/" && !e.metaKey && !e.ctrlKey && document.activeElement !== searchEl) {
+        if (e.key === "/" && !e.metaKey && !e.ctrlKey && !typing) {
             e.preventDefault();
             searchEl.focus();
             searchEl.select();
         }
-        if (e.key === "?" && !e.metaKey && !e.ctrlKey) toggleShortcuts();
+        if (e.key === "?" && !e.metaKey && !e.ctrlKey && !typing) toggleShortcuts();
         if (
             (e.key === "v" || e.key === "V") &&
             !e.metaKey &&
             !e.ctrlKey &&
             !e.shiftKey &&
-            !(
-                document.activeElement instanceof HTMLInputElement ||
-                document.activeElement instanceof HTMLTextAreaElement
-            )
+            !typing
         ) {
             toggleViewMode();
         }
-        if (e.ctrlKey && e.code === "Space") {
+        if (e.ctrlKey && e.code === "Space" && !typing) {
             e.preventDefault();
             if (viewMode !== "simple") {
                 const repo = getCurrentRepo();

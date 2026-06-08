@@ -4,6 +4,7 @@ using Gitxtr.Domain;
 using Gitxtr.Host;
 using Gitxtr.Host.Messaging;
 using Gitxtr.Host.Messaging.Handlers;
+using Gitxtr.Host.Terminal;
 using Gitxtr.Infrastructure;
 using Microsoft.Extensions.Logging;
 using Photino.NET;
@@ -65,6 +66,7 @@ var jsonOpts = new JsonSerializerOptions(JsonSerializerDefaults.Web);
 
 // watcher is created before window; the lambda captures `window` which is assigned below.
 PhotinoWindow? window = null;
+TerminalManager? terminal = null;
 var watcher = new RepoWatcherService(repoPath =>
 {
     var w = window;
@@ -126,6 +128,9 @@ void RunWindow()
             // responses by id, so out-of-order replies are fine. SendWebMessage must run on
             // the UI thread, so post the result back via Invoke.
             var w = (PhotinoWindow)sender!;
+            // Terminal channel (term:*) is fire-and-forget and bypasses the JSON-RPC dispatch.
+            if (terminal?.TryHandle(message) == true)
+                return;
             Task.Run(() =>
             {
                 string response = dispatcher.Dispatch(w, message);
@@ -134,12 +139,15 @@ void RunWindow()
         })
         .Load(string.IsNullOrEmpty(devUrl) ? indexPath : devUrl);
 
+    terminal = new TerminalManager(window, loggerFactory.CreateLogger("Terminal"));
+
     // Check GitHub Releases for a newer build in the background and stage it to apply on next
     // launch (no mid-session restart). Skipped in dev and when not installed via Velopack.
     if (string.IsNullOrEmpty(devUrl))
         _ = Updater.CheckInBackgroundAsync(loggerFactory.CreateLogger("Updater"));
 
     window.WaitForClose();
+    terminal.Dispose();
 }
 
 // Pitfall #2: WebView2 (Windows) must be created and pumped on a single-threaded COM
