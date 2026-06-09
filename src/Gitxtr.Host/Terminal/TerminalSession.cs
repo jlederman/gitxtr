@@ -78,7 +78,7 @@ internal sealed class TerminalSession : IDisposable
     {
         if (_disposed) return;
         try { _pty.Resize(Math.Max(cols, 2), Math.Max(rows, 1)); }
-        catch { }
+        catch { /* a resize can race the shell exiting; the next read closes the session */ }
     }
 
     public void Dispose()
@@ -86,7 +86,7 @@ internal sealed class TerminalSession : IDisposable
         if (_disposed) return;
         _disposed = true;
         _cts.Cancel();
-        try { _pty.Kill(); } catch { }
+        try { _pty.Kill(); } catch { /* the shell may have already exited */ }
         (_pty as IDisposable)?.Dispose();
         _cts.Dispose();
     }
