@@ -1,0 +1,140 @@
+/* Interactive-rebase modal. Owned by rebaseModal.ts. */
+/* ── Interactive rebase modal ───────────────────────────────────────────── */
+.rebase-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    background: rgba(0, 0, 0, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.rebase-modal[hidden] {
+    display: none;
+}
+.rebase-card {
+    width: min(720px, 92vw);
+    max-height: 80vh;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+}
+.rebase-hdr {
+    flex: 0 0 auto;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+}
+.rebase-hdr .title {
+    color: var(--accent);
+    font-weight: bold;
+    flex: 1;
+}
+.rebase-modal-close {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 0 4px;
+}
+.rebase-modal-close:hover {
+    color: var(--fg);
+}
+.rebase-info {
+    padding: 8px 16px;
+    font-size: 12px;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+}
+.rebase-list {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 6px 0;
+}
+.ritem {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 14px;
+    font-size: var(--font-size);
+}
+.ritem:hover {
+    background: var(--surface2);
+}
+.ritem select {
+    padding: 2px 4px;
+    font-size: 12px;
+    width: 72px;
+    flex: 0 0 auto;
+}
+.ritem.r-drop {
+    opacity: 0.4;
+}
+.ritem .r-sha {
+    color: var(--sha);
+    flex: 0 0 auto;
+}
+.ritem .r-msg {
+    flex: 1 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.r-arrows {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    flex: 0 0 auto;
+}
+.r-arrows button {
+    padding: 0 4px;
+    line-height: 14px;
+    font-size: 10px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    color: var(--muted);
+    cursor: pointer;
+}
+.r-arrows button:hover:not(:disabled) {
+    color: var(--fg);
+    border-color: var(--fg);
+}
+.r-arrows button:disabled {
+    opacity: 0.25;
+    cursor: default;
+}
+.rebase-footer {
+    flex: 0 0 auto;
+    padding: 10px 14px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.rebase-err {
+    flex: 1;
+    color: var(--del-fg);
+    font-size: 11px;
+}
+.rebase-cancel-btn {
+    padding: 4px 14px;
+}
+.do-rebase-btn {
+    padding: 4px 18px;
+    background: var(--accent);
+    border: none;
+    border-radius: 4px;
+    color: var(--bg);
+    font-size: var(--font-size);
+    cursor: pointer;
+}
+.do-rebase-btn:hover {
+    filter: brightness(1.15);
+}

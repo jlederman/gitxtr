@@ -1,0 +1,56 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- WinExe (not Exe) so Windows does not pop a console window behind the GUI. -->
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>gitxtr</AssemblyName>
+    <Product>gitxtr</Product>
+    <Authors>Jonathan Lederman</Authors>
+    <Company>Central Oregon Webworks, LLC</Company>
+    <Description>A cross-platform desktop Git client: commit graph, diff viewer, file history and blame, interactive rebase, remote operations, and an integrated terminal.</Description>
+    <Copyright>Copyright © 2026 Central Oregon Webworks, LLC</Copyright>
+    <!-- CI overrides this from the git tag (vpk pack -v); the default keeps local packs valid. -->
+    <Version>0.0.1</Version>
+    <WebDir>$(MSBuildProjectDirectory)/../../web</WebDir>
+    <WebBundle>$(MSBuildProjectDirectory)/obj/webdist/index.html</WebBundle>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Gitxtr.Application\Gitxtr.Application.csproj" />
+    <ProjectReference Include="..\Gitxtr.Infrastructure\Gitxtr.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.8" />
+    <PackageReference Include="Photino.NET" Version="4.0.16" />
+    <PackageReference Include="Porta.Pty" Version="1.0.7" />
+    <PackageReference Include="Velopack" Version="1.2.0" />
+  </ItemGroup>
+
+  <!-- The Vite single-file bundle is a GENERATED artifact, not a source file. BuildWebUi emits it
+       into obj/webdist (a git-ignored build-intermediate dir) and the Content Link below copies it
+       to wwwroot/ in the build OUTPUT — so nothing generated lands in the source tree. It runs
+       during the build (so `dotnet run` works from a clean checkout) and is incremental via
+       Inputs/Outputs. Requires Node/npm on PATH. -->
+  <ItemGroup>
+    <WebUiSource Include="$(WebDir)/index.html;$(WebDir)/package.json;$(WebDir)/vite.config.ts;$(WebDir)/tsconfig.json" />
+    <WebUiSource Include="$(WebDir)/src/**/*" />
+    <Content Include="obj/webdist/index.html" Link="wwwroot/index.html" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- Runtime window/taskbar icon, copied next to the exe. Windows loads icon.ico, macOS/Linux
+       icon.png (see Program.cs). The installed bundle icon is set separately by Velopack at pack time. -->
+  <ItemGroup>
+    <Content Include="../../build/icon/icon.ico" Link="icon.ico" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="../../build/icon/icon.png" Link="icon.png" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <Target Name="BuildWebUi" BeforeTargets="AssignTargetPaths" Inputs="@(WebUiSource)" Outputs="$(WebBundle)">
+    <Exec Command="npm install" WorkingDirectory="$(WebDir)" Condition="!Exists('$(WebDir)/node_modules')" />
+    <Exec Command="npm run build" WorkingDirectory="$(WebDir)" />
+  </Target>
+
+</Project>

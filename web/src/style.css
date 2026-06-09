@@ -1,0 +1,53 @@
+:root {
+    /* Defaults mirror the "atom-one-light" theme so the first paint is correct before settings load.
+     applyThemeCss() overrides these at runtime. */
+    --bg: #f9f9f9;
+    --surface: #ededed;
+    --surface2: #dbdbdb;
+    --border: #e0e0e1;
+    --fg: #2a2c33;
+    --muted: #000000;
+    --accent: #2f5af3;
+    --sha: #2f5af3;
+    --ref-bg: rgba(63, 149, 58, 0.18);
+    --ref-fg: #3f953a;
+    --sel: rgba(47, 90, 243, 0.25);
+    --add-bg: rgba(63, 149, 58, 0.13);
+    --add-fg: #3f953a;
+    --del-bg: rgba(222, 62, 53, 0.13);
+    --del-fg: #de3e35;
+    --hunk: #3f953a;
+    --fhdr: #a00095;
+    --font-family: ui-monospace, "Cascadia Code", "JetBrains Mono", monospace;
+    --font-size: 13px;
+    --detail-height: 320px;
+}
+
+html,
+body {
+    margin: 0;
+    height: 100%;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-family);
+    font-size: var(--font-size);
+    overflow: hidden;
+}
+
+button,
+input,
+select {
+    font-family: var(--font-family);
+    font-size: var(--font-size);
+    color: var(--fg);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 3px 8px;
+}
+button {
+    cursor: pointer;
+}
+button:hover {
+    border-color: var(--accent);
+}

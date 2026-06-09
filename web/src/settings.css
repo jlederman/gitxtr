@@ -1,0 +1,260 @@
+/* Settings overlay and the theme-preview panel. Owned by settings.ts. */
+/* ── Settings view (full-area overlay) ─────────────────────────────────── */
+.settings {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+}
+.settings[hidden] {
+    display: none;
+}
+.settings-bar {
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+}
+.settings-bar .title {
+    color: var(--accent);
+    font-weight: bold;
+}
+.settings-body {
+    flex: 1 1 auto;
+    display: flex;
+    min-height: 0;
+}
+.settings-cats {
+    width: 180px;
+    flex: 0 0 auto;
+    padding: 12px 8px;
+    border-right: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.settings-cats button {
+    text-align: left;
+    background: transparent;
+    border-color: transparent;
+    padding: 6px 10px;
+}
+.settings-cats button:hover {
+    background: var(--surface2);
+}
+.settings-cats button.active {
+    background: var(--surface2);
+    border-color: var(--border);
+    color: var(--accent);
+}
+.settings-panes {
+    flex: 1 1 auto;
+    padding: 18px 22px;
+    overflow: auto;
+}
+.settings-panes h3 {
+    color: var(--accent);
+    margin: 18px 0 8px;
+    font-size: 13px;
+}
+.settings-panes h3:first-child {
+    margin-top: 0;
+}
+.settings-panes h3 .hint {
+    color: var(--muted);
+    font-weight: normal;
+    font-size: 11px;
+}
+.settings-panes label {
+    display: grid;
+    grid-template-columns: 130px minmax(220px, 340px);
+    align-items: center;
+    gap: 12px;
+    margin: 10px 0;
+    color: var(--muted);
+}
+.settings-panes label > select,
+.settings-panes label > input,
+.settings-panes label > button {
+    width: 100%;
+    box-sizing: border-box;
+}
+.hotkey-capture {
+    text-align: center;
+}
+.hotkey-capture.capturing {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+.settings-panes .row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 14px;
+}
+.git-status,
+.appearance-status {
+    color: var(--muted);
+}
+/* ── Theme preview panel ────────────────────────────────────────────────── */
+.theme-preview {
+    margin-top: 20px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    font-size: 12px;
+}
+.tp-hdr {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    height: 28px;
+    padding: 0 10px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+}
+.tp-hdr-title {
+    color: var(--accent);
+    font-weight: bold;
+    font-size: 11px;
+}
+.tp-hdr-chip {
+    padding: 1px 6px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--fg);
+    font-size: 10px;
+}
+.tp-hdr-btn {
+    padding: 1px 6px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--muted);
+    font-size: 10px;
+}
+.tp-hdr-sep {
+    flex: 1;
+}
+.tp-graph {
+    display: flex;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+}
+.tp-rows {
+    flex: 1;
+    min-width: 0;
+}
+.tp-row {
+    height: 22px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 8px;
+    overflow: hidden;
+    white-space: nowrap;
+}
+.tp-row.tp-sel {
+    background: var(--sel);
+}
+.tp-sha {
+    color: var(--sha);
+    font-size: 11px;
+    flex: 0 0 auto;
+}
+.tp-chip {
+    flex: 0 0 auto;
+    padding: 0 5px;
+    border-radius: 3px;
+    background: var(--ref-bg);
+    color: var(--ref-fg);
+    font-size: 10px;
+}
+.tp-msg {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.tp-who {
+    color: var(--muted);
+    font-size: 10px;
+    flex: 0 0 auto;
+}
+.tp-meta {
+    background: var(--surface);
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    line-height: 1.6;
+}
+.tp-meta-line {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+.tp-meta-sha {
+    color: var(--sha);
+}
+.tp-meta-when {
+    color: var(--muted);
+}
+.tp-meta-who {
+    color: var(--fg);
+}
+.tp-meta-subject {
+    color: var(--accent);
+    font-weight: bold;
+    margin-top: 2px;
+}
+.tp-files {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 2px 0;
+}
+.tp-fitem {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 1px 10px;
+    font-size: 11px;
+    white-space: nowrap;
+}
+.tp-fitem.tp-sel {
+    background: var(--sel);
+}
+.tp-fstat {
+    width: 1.1em;
+    text-align: center;
+    font-weight: bold;
+    flex: 0 0 auto;
+}
+.tp-fpath {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.tp-fadd {
+    color: var(--add-fg);
+    flex: 0 0 auto;
+}
+.tp-fdel {
+    color: var(--del-fg);
+    flex: 0 0 auto;
+}
+.tp-diff {
+    background: var(--bg);
+    padding: 2px 0;
+    white-space: pre;
+}
+.tp-diff.diff-pane .line {
+    padding: 1px 10px;
+    font-size: 11px;
+}

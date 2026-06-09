@@ -1,0 +1,23 @@
+/* Repository list (settings → Repositories pane). Owned by repos.ts. */
+.repo-list {
+    margin-top: 6px;
+}
+.repo-list .muted {
+    color: var(--muted);
+}
+.repo-list .repo-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 0;
+    max-width: 680px;
+}
+.repo-list .repo-row .rp {
+    flex: 1 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.repo-list .repo-row .rm {
+    flex: 0 0 auto;
+}

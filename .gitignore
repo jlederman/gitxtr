@@ -1,0 +1,15 @@
+# .NET
+bin/
+obj/
+*.user
+.vs/
+
+# Velopack local packaging output (make pack)
+publish/
+release/
+
+# Node / Vite (web/)
+node_modules/
+
+# OS
+.DS_Store

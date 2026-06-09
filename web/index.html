@@ -1,0 +1,523 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>gitxtr</title>
+    </head>
+    <body>
+        <div class="header">
+            <span class="app-title">gitxtr</span>
+            <select id="repo-select" class="repo-select" title="Switch repository"></select>
+            <select id="branch-select" class="branch-select" title="Switch branch"></select>
+            <button id="add-repo" class="add-repo" title="Add a repository">+ Repo</button>
+            <button id="btn-fetch" class="remote-btn" title="Fetch from remote" hidden>
+                Fetch
+            </button>
+            <button id="btn-pull" class="remote-btn" title="Pull from remote" hidden>Pull</button>
+            <button id="btn-push" class="remote-btn" title="Push to remote" hidden>Push</button>
+            <input
+                id="search"
+                class="search"
+                type="search"
+                placeholder="Filter commits…"
+                autocomplete="off"
+                spellcheck="false"
+            />
+            <button id="search-hide" class="search-hide" title="Hide non-matching commits" hidden>
+                Hide
+            </button>
+            <span id="status" class="status"></span>
+            <button id="toggle-view" class="toggle-view" title="Toggle simple / complex view (V)">
+                Simple
+            </button>
+            <button
+                id="open-terminal"
+                class="open-terminal"
+                title="Toggle terminal (Ctrl+`)"
+                aria-label="Toggle terminal"
+            >
+                &gt;_
+            </button>
+            <button
+                id="open-shortcuts"
+                class="open-shortcuts"
+                title="Keyboard shortcuts (?)"
+                aria-label="Keyboard shortcuts"
+            >
+                ?
+            </button>
+            <button id="open-settings" class="open-settings" title="Settings" aria-label="Settings">
+                ⚙
+            </button>
+        </div>
+        <div id="viewport" class="viewport" tabindex="0"><canvas id="graph"></canvas></div>
+        <div id="vsplit" class="vsplit" title="Drag to resize"></div>
+        <div id="detail" class="detail">
+            <div id="detail-top" class="detail-top">
+                <div id="detail-meta" class="detail-meta"></div>
+                <div id="msplit" class="msplit" title="Drag to resize"></div>
+                <div id="detail-files" class="detail-files" tabindex="0"></div>
+            </div>
+            <div id="dsplit" class="dsplit" title="Drag to resize"></div>
+            <div class="diff-pane detail-diff">
+                <div id="diff-toolbar" class="diff-toolbar">
+                    <div class="seg">
+                        <button data-mode="unified" class="active">Unified</button>
+                        <button data-mode="split">Split</button>
+                    </div>
+                </div>
+                <div id="diff-body" class="diff-body"></div>
+            </div>
+        </div>
+
+        <div id="terminal" class="terminal-pane">
+            <div id="term-resize" class="term-resize" title="Drag to resize"></div>
+            <div class="term-bar">
+                <span class="term-title">Terminal</span>
+                <button id="term-close" class="term-close" title="Close terminal">×</button>
+            </div>
+            <div id="term-host" class="term-host"></div>
+        </div>
+
+        <div id="settings" class="settings" hidden>
+            <div class="settings-bar">
+                <span class="title">Settings</span>
+                <button id="settings-close">Done</button>
+            </div>
+            <div class="settings-body">
+                <nav id="settings-cats" class="settings-cats">
+                    <button data-cat="appearance" class="active">Appearance</button>
+                    <button data-cat="git">Git Identity</button>
+                    <button data-cat="repos">Repositories</button>
+                    <button data-cat="about">About</button>
+                </nav>
+                <div id="settings-panes" class="settings-panes">
+                    <section data-pane="appearance">
+                        <h3>Appearance</h3>
+                        <label
+                            >Theme
+                            <select id="set-theme"></select
+                        ></label>
+                        <label
+                            >Font family <input id="set-font" type="text" spellcheck="false"
+                        /></label>
+                        <label
+                            >Font size <input id="set-fontsize" type="number" min="9" max="28"
+                        /></label>
+                        <label
+                            >Terminal hotkey
+                            <button
+                                id="set-term-hotkey"
+                                type="button"
+                                class="hotkey-capture"
+                            ></button>
+                        </label>
+                        <div class="row">
+                            <span id="appearance-status" class="appearance-status"></span>
+                        </div>
+                        <div class="theme-preview">
+                            <div class="tp-hdr">
+                                <span class="tp-hdr-title">gitxtr</span>
+                                <span class="tp-hdr-chip">my-project ▼</span>
+                                <span class="tp-hdr-chip">main ▼</span>
+                                <span class="tp-hdr-btn">Fetch</span>
+                                <span class="tp-hdr-btn">Pull</span>
+                                <span class="tp-hdr-sep"></span>
+                                <span class="tp-hdr-btn">⚙</span>
+                            </div>
+                            <div class="tp-graph">
+                                <svg
+                                    width="68"
+                                    height="88"
+                                    viewBox="0 0 68 88"
+                                    style="display: block; flex: 0 0 auto"
+                                >
+                                    <line
+                                        x1="10"
+                                        y1="0"
+                                        x2="10"
+                                        y2="88"
+                                        stroke="var(--lane-0)"
+                                        stroke-width="1.5"
+                                    />
+                                    <line
+                                        x1="30"
+                                        y1="0"
+                                        x2="30"
+                                        y2="66"
+                                        stroke="var(--lane-1)"
+                                        stroke-width="1.5"
+                                    />
+                                    <path
+                                        d="M30 66 Q30 77 10 77"
+                                        stroke="var(--lane-1)"
+                                        stroke-width="1.5"
+                                        fill="none"
+                                    />
+                                    <path
+                                        d="M10 22 Q50 22 50 33"
+                                        stroke="var(--lane-2)"
+                                        stroke-width="1.5"
+                                        fill="none"
+                                    />
+                                    <line
+                                        x1="50"
+                                        y1="33"
+                                        x2="50"
+                                        y2="44"
+                                        stroke="var(--lane-2)"
+                                        stroke-width="1.5"
+                                    />
+                                    <path
+                                        d="M50 44 Q50 55 30 55"
+                                        stroke="var(--lane-2)"
+                                        stroke-width="1.5"
+                                        fill="none"
+                                    />
+                                    <circle
+                                        cx="10"
+                                        cy="11"
+                                        r="4"
+                                        fill="var(--bg)"
+                                        stroke="var(--lane-0)"
+                                        stroke-width="1.5"
+                                    />
+                                    <circle
+                                        cx="50"
+                                        cy="33"
+                                        r="4"
+                                        fill="var(--bg)"
+                                        stroke="var(--lane-2)"
+                                        stroke-width="1.5"
+                                    />
+                                    <circle
+                                        cx="30"
+                                        cy="55"
+                                        r="4"
+                                        fill="var(--bg)"
+                                        stroke="var(--lane-1)"
+                                        stroke-width="1.5"
+                                    />
+                                    <circle
+                                        cx="10"
+                                        cy="77"
+                                        r="4"
+                                        fill="var(--bg)"
+                                        stroke="var(--lane-0)"
+                                        stroke-width="1.5"
+                                    />
+                                </svg>
+                                <div class="tp-rows">
+                                    <div class="tp-row">
+                                        <span class="tp-sha">a1b2c3d</span>
+                                        <span class="tp-chip">main</span>
+                                        <span class="tp-chip">origin/main</span>
+                                        <span class="tp-msg">Merge pull request #42</span>
+                                    </div>
+                                    <div class="tp-row tp-sel">
+                                        <span class="tp-sha">e4f5a6b</span>
+                                        <span class="tp-chip">feature/auth</span>
+                                        <span class="tp-msg">Add OAuth2 login flow</span>
+                                        <span class="tp-who">Jane S. · 2h</span>
+                                    </div>
+                                    <div class="tp-row">
+                                        <span class="tp-sha">7c8d9e0</span>
+                                        <span class="tp-msg">Fix authentication bug</span>
+                                        <span class="tp-who">John D. · 1d</span>
+                                    </div>
+                                    <div class="tp-row">
+                                        <span class="tp-sha">f1a2b3c</span>
+                                        <span class="tp-msg">Initial commit</span>
+                                        <span class="tp-who">3 days ago</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="tp-meta">
+                                <div class="tp-meta-line">
+                                    <span class="tp-meta-sha"
+                                        >e4f5a6b1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7</span
+                                    >
+                                    <span class="tp-meta-when"> · June 7, 2026, 3:30 PM</span>
+                                </div>
+                                <div class="tp-meta-line">
+                                    <span class="tp-meta-who"
+                                        >Jane Smith &lt;jane@example.com&gt;</span
+                                    >
+                                </div>
+                                <div class="tp-meta-line">
+                                    <span class="tp-chip">feature/auth</span>
+                                </div>
+                                <div class="tp-meta-subject">Add OAuth2 login flow</div>
+                            </div>
+                            <div class="tp-files">
+                                <div class="tp-fitem">
+                                    <span class="tp-fstat st-add">A</span>
+                                    <span class="tp-fpath">src/auth/oauth.ts</span>
+                                    <span class="tp-fadd">+48</span>
+                                </div>
+                                <div class="tp-fitem tp-sel">
+                                    <span class="tp-fstat st-mod">M</span>
+                                    <span class="tp-fpath">src/auth/login.ts</span>
+                                    <span class="tp-fadd">+2</span>
+                                    <span class="tp-fdel">-1</span>
+                                </div>
+                                <div class="tp-fitem">
+                                    <span class="tp-fstat st-del">D</span>
+                                    <span class="tp-fpath">src/auth/legacy.ts</span>
+                                    <span class="tp-fdel">-31</span>
+                                </div>
+                            </div>
+                            <div class="tp-diff diff-pane">
+                                <div class="line fhdr">src/auth/login.ts</div>
+                                <div class="line hunk">
+                                    @@ -14,7 +14,9 @@ export function authenticate()
+                                </div>
+                                <div class="line">const session = createSession();</div>
+                                <div class="line del">- const token = legacyAuth(user);</div>
+                                <div class="line add">+ const token = await oauthLogin(user);</div>
+                                <div class="line add">+ await session.store(token);</div>
+                                <div class="line">return { session, token };</div>
+                            </div>
+                        </div>
+                    </section>
+                    <section data-pane="git" hidden>
+                        <h3>Global identity <span class="hint">~/.gitconfig</span></h3>
+                        <label
+                            >Name <input id="git-global-name" type="text" spellcheck="false"
+                        /></label>
+                        <label
+                            >Email <input id="git-global-email" type="text" spellcheck="false"
+                        /></label>
+                        <h3>This repository <span class="hint">.git/config</span></h3>
+                        <label
+                            >Name <input id="git-local-name" type="text" spellcheck="false"
+                        /></label>
+                        <label
+                            >Email <input id="git-local-email" type="text" spellcheck="false"
+                        /></label>
+                        <div class="row">
+                            <button id="git-save">Save git identity</button>
+                            <span id="git-status" class="git-status"></span>
+                        </div>
+                    </section>
+                    <section data-pane="repos" hidden>
+                        <h3>Repositories</h3>
+                        <div class="row">
+                            <button id="add-repo-settings">Add repository…</button>
+                        </div>
+                        <div id="repo-list" class="repo-list"></div>
+                    </section>
+                    <section data-pane="about" hidden>
+                        <h3>About</h3>
+                        <p>gitxtr — a cross-platform commit-graph viewer.</p>
+                    </section>
+                </div>
+            </div>
+        </div>
+
+        <div id="shortcuts" class="shortcuts" hidden>
+            <div class="shortcuts-card">
+                <div class="shortcuts-bar">
+                    <span class="title">Keyboard Shortcuts</span>
+                    <button id="shortcuts-close">Done</button>
+                </div>
+                <div class="shortcuts-body">
+                    <section>
+                        <h3>Commit Graph</h3>
+                        <table>
+                            <tr>
+                                <td>↑ / ↓</td>
+                                <td>Navigate commits</td>
+                            </tr>
+                            <tr>
+                                <td>Page Up / Page Down</td>
+                                <td>Jump by page</td>
+                            </tr>
+                            <tr>
+                                <td>Home / End</td>
+                                <td>First / last commit</td>
+                            </tr>
+                            <tr>
+                                <td>c</td>
+                                <td>Copy short SHA to clipboard</td>
+                            </tr>
+                            <tr>
+                                <td>C</td>
+                                <td>Copy full SHA to clipboard</td>
+                            </tr>
+                            <tr>
+                                <td>Right-click</td>
+                                <td>Context menu (copy, …)</td>
+                            </tr>
+                        </table>
+                    </section>
+                    <section>
+                        <h3>Changed Files</h3>
+                        <table>
+                            <tr>
+                                <td>↑ / ↓</td>
+                                <td>Navigate files, scroll diff</td>
+                            </tr>
+                        </table>
+                    </section>
+                    <section>
+                        <h3>General</h3>
+                        <table>
+                            <tr>
+                                <td>/</td>
+                                <td>Focus commit filter</td>
+                            </tr>
+                            <tr>
+                                <td>F5 / ⌘R</td>
+                                <td>Refresh graph</td>
+                            </tr>
+                            <tr>
+                                <td>?</td>
+                                <td>Toggle this panel</td>
+                            </tr>
+                            <tr>
+                                <td>V</td>
+                                <td>Toggle simple / complex view</td>
+                            </tr>
+                            <tr>
+                                <td>Ctrl+Space</td>
+                                <td>Open commit dialog</td>
+                            </tr>
+                            <tr>
+                                <td>Esc</td>
+                                <td>Close panel / dismiss menu</td>
+                            </tr>
+                        </table>
+                    </section>
+                </div>
+            </div>
+        </div>
+
+        <div id="commit-modal" class="commit-modal" hidden>
+            <div class="commit-card">
+                <div class="commit-hdr">
+                    <span class="title">Commit</span>
+                    <button id="commit-modal-close" class="commit-modal-close" title="Close (Esc)">
+                        ×
+                    </button>
+                </div>
+                <div class="commit-workspace">
+                    <div id="commit-files-pane" class="commit-files-pane" tabindex="0"></div>
+                    <div id="commit-diff-pane" class="diff-pane commit-diff-pane"></div>
+                </div>
+                <div class="commit-footer">
+                    <textarea
+                        id="commit-msg-input"
+                        class="commit-msg-input"
+                        placeholder="Commit message"
+                        spellcheck="false"
+                    ></textarea>
+                    <div class="commit-footer-row">
+                        <label class="commit-amend-label">
+                            <input type="checkbox" id="commit-amend-chk" /> Amend last commit
+                        </label>
+                        <span id="commit-msg-err" class="commit-msg-err"></span>
+                        <button id="do-commit-btn" class="do-commit-btn" disabled>Commit</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="rebase-modal" class="rebase-modal" hidden>
+            <div class="rebase-card">
+                <div class="rebase-hdr">
+                    <span class="title">Interactive Rebase</span>
+                    <button id="rebase-modal-close" class="rebase-modal-close" title="Close (Esc)">
+                        ×
+                    </button>
+                </div>
+                <div id="rebase-info" class="rebase-info"></div>
+                <div id="rebase-list" class="rebase-list"></div>
+                <div class="rebase-footer">
+                    <span id="rebase-err" class="rebase-err"></span>
+                    <button id="rebase-cancel-btn" class="rebase-cancel-btn">Cancel</button>
+                    <button id="do-rebase-btn" class="do-rebase-btn">Rebase</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="remote-modal" class="remote-modal" hidden>
+            <div class="remote-card">
+                <div class="remote-hdr">
+                    <span class="title" id="remote-title">Remote</span>
+                    <button id="remote-modal-close" class="remote-modal-close" title="Close (Esc)">
+                        ×
+                    </button>
+                </div>
+                <div class="remote-body">
+                    <label class="rf-row" id="rf-remote-row">
+                        <span class="rf-label">Remote</span>
+                        <select id="rf-remote"></select>
+                    </label>
+                    <label class="rf-row" id="rf-branch-row">
+                        <span class="rf-label">Branch</span>
+                        <select id="rf-branch"></select>
+                    </label>
+                    <div class="rf-row" id="rf-mode-row">
+                        <span class="rf-label">Mode</span>
+                        <span class="rf-radios">
+                            <label
+                                ><input type="radio" name="rf-pullmode" value="merge" checked />
+                                Merge</label
+                            >
+                            <label
+                                ><input type="radio" name="rf-pullmode" value="rebase" />
+                                Rebase</label
+                            >
+                        </span>
+                    </div>
+                    <label class="rf-check" id="rf-prune-row"
+                        ><input type="checkbox" id="rf-prune" /> Prune deleted remote
+                        branches</label
+                    >
+                    <label class="rf-check" id="rf-force-row"
+                        ><input type="checkbox" id="rf-force" /> Force (with lease)</label
+                    >
+                    <label class="rf-check" id="rf-upstream-row"
+                        ><input type="checkbox" id="rf-upstream" /> Set as upstream</label
+                    >
+                    <pre id="remote-output" class="remote-output" hidden></pre>
+                </div>
+                <div class="remote-footer">
+                    <span id="remote-msg" class="remote-msg"></span>
+                    <button id="remote-cancel-btn" class="remote-cancel-btn">Cancel</button>
+                    <button id="do-remote-btn" class="do-remote-btn">Go</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="fh-modal" class="fh-modal" hidden>
+            <div class="fh-card">
+                <div class="fh-hdr">
+                    <span class="title">File history</span>
+                    <span id="fh-path" class="fh-path"></span>
+                    <div id="fh-tabs" class="fh-tabs">
+                        <button data-tab="history">History</button>
+                        <button data-tab="blame">Blame</button>
+                    </div>
+                    <button id="fh-modal-close" class="fh-modal-close" title="Close (Esc)">
+                        ×
+                    </button>
+                </div>
+                <div class="fh-workspace">
+                    <div id="fh-list" class="fh-list" tabindex="0"></div>
+                    <div id="fh-detail" class="diff-pane fh-detail"></div>
+                </div>
+                <div class="fh-footer">
+                    <span id="fh-hint" class="fh-hint"></span>
+                    <button id="fh-goto-btn" class="fh-goto-btn">Show in graph</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="ctx-menu" class="ctx-menu" hidden></div>
+
+        <script type="module" src="/src/main.ts"></script>
+    </body>
+</html>

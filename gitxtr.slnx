@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Gitxtr.Host/Gitxtr.Host.csproj" />
+    <Project Path="src/Gitxtr.Application/Gitxtr.Application.csproj" />
+    <Project Path="src/Gitxtr.Domain/Gitxtr.Domain.csproj" />
+    <Project Path="src/Gitxtr.Infrastructure/Gitxtr.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Gitxtr.Domain.Tests/Gitxtr.Domain.Tests.csproj" />
+  </Folder>
+</Solution>
