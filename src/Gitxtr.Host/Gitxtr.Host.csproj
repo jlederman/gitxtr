@@ -7,6 +7,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AssemblyName>gitxtr</AssemblyName>
+    <Product>gitxtr</Product>
+    <Authors>Jonathan Lederman</Authors>
+    <Company>Central Oregon Webworks, LLC</Company>
+    <Description>A cross-platform desktop Git client: commit graph, diff viewer, file history and blame, interactive rebase, remote operations, and an integrated terminal.</Description>
+    <Copyright>Copyright © 2026 Central Oregon Webworks, LLC</Copyright>
     <!-- CI overrides this from the git tag (vpk pack -v); the default keeps local packs valid. -->
     <Version>0.0.1</Version>
     <WebDir>$(MSBuildProjectDirectory)/../../web</WebDir>
