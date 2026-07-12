@@ -216,9 +216,10 @@ export function openTerminal(): void {
 }
 
 export function closeTerminal(): void {
-    if (!isOpen) return;
+    const p = pane();
+    if (!isOpen && !p.classList.contains("open")) return;
     isOpen = false;
-    pane().classList.remove("open");
+    p.classList.remove("open");
     // Keep the shell session alive (VS Code-style) — just hide the pane.
     document.getElementById("viewport")?.focus();
 }

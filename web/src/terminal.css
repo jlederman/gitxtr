@@ -14,11 +14,16 @@
     flex-direction: column;
     z-index: 20;
     transform: translateY(100%);
-    transition: transform 0.18s ease;
+    /* visibility becomes hidden after the slide-out finishes (0s duration, 0.18s delay).
+       This ensures the pane is truly invisible even if the transform is composited oddly. */
+    visibility: hidden;
+    transition: transform 0.18s ease, visibility 0s linear 0.18s;
     box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.35);
 }
 .terminal-pane.open {
     transform: translateY(0);
+    visibility: visible;
+    transition: transform 0.18s ease;
 }
 .terminal-pane:not(.open) {
     pointer-events: none;

@@ -75,9 +75,21 @@ function activateFile(idx: number): void {
         if (!f) return;
         renderPatchString(f.patch);
     } else {
-        document
-            .getElementById(`diffsec-${idx}`)
-            ?.scrollIntoView({ block: "start", behavior: "smooth" });
+        const section = document.getElementById(`diffsec-${idx}`);
+        if (!section) return;
+        // Walk up to the nearest overflow:auto/scroll ancestor and scroll within it
+        // rather than using scrollIntoView, which on WebKitGTK (Photino/Linux) scrolls
+        // the document body instead of the diff container, revealing off-screen elements.
+        let scrollEl = section.parentElement;
+        while (scrollEl && scrollEl !== document.body) {
+            const ovY = getComputedStyle(scrollEl).overflowY;
+            if (ovY === "auto" || ovY === "scroll") break;
+            scrollEl = scrollEl.parentElement;
+        }
+        if (scrollEl && scrollEl !== document.body) {
+            scrollEl.scrollTop +=
+                section.getBoundingClientRect().top - scrollEl.getBoundingClientRect().top;
+        }
     }
 }
 

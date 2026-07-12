@@ -98,8 +98,17 @@ internal sealed class TerminalSession : IDisposable
         if (OperatingSystem.IsWindows())
             return ("powershell.exe", []);
 
-        string shell = Environment.GetEnvironmentVariable("SHELL") ?? "";
-        return (string.IsNullOrEmpty(shell) ? "/bin/bash" : shell, []);
+        string shell = Environment.GetEnvironmentVariable("SHELL") is { Length: > 0 } s ? s : "/bin/bash";
+
+        // Porta.Pty 1.0.7's Linux provider builds the PTY's termios with no OPOST/ONLCR (its
+        // macOS provider sets both), so a bare '\n' from the shell doesn't return to column 0 —
+        // output "staircases" rightward. OPOST is the master switch for output post-processing;
+        // ONLCR only takes effect once it's on. Fix the line discipline once at startup, then
+        // exec into the real shell so it still runs as a single, normal process.
+        if (OperatingSystem.IsLinux())
+            return ("/bin/sh", ["-c", $"stty opost onlcr icrnl 2>/dev/null; exec \"{shell}\""]);
+
+        return (shell, []);
     }
 
     private static IDictionary<string, string> BuildEnvironment()
