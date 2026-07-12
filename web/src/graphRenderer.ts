@@ -114,8 +114,20 @@ export class GraphRenderer {
     private x(col: number): number {
         return PAD_L + col * COL_W + COL_W / 2;
     }
-    private textStartX(): number {
-        return PAD_L + (this.view.width + 1) * COL_W + 8;
+    // Text starts right after the lanes that are actually active AT this row — not the widest
+    // point anywhere in the graph. A repo with a few busy stretches (lots of parallel branches)
+    // would otherwise push every row's message out to that same far-right column, even rows
+    // that only have a single lane, stranding the message away from its commit dot.
+    private rowLaneWidth(i: number): number {
+        const row = this.view.rows[i];
+        let w = row.column;
+        for (const e of row.edges) w = Math.max(w, e.from, e.to);
+        const prev = i > 0 ? this.view.rows[i - 1] : undefined;
+        if (prev) for (const e of prev.edges) w = Math.max(w, e.from, e.to);
+        return w;
+    }
+    private textStartX(laneWidth: number): number {
+        return PAD_L + (laneWidth + 1) * COL_W + 8;
     }
 
     // ── input ──────────────────────────────────────────────────────────────
@@ -326,7 +338,6 @@ export class GraphRenderer {
         // nodes + text
         ctx.font = `${this.fontSize}px ${this.fontFamily}`;
         ctx.textBaseline = "middle";
-        const textX = this.textStartX();
         let maxRight = 0;
         for (let i = first; i <= last; i++) {
             const row = rows[i];
@@ -344,7 +355,17 @@ export class GraphRenderer {
             ctx.strokeStyle = this.theme.bg;
             ctx.stroke();
 
-            let tx = textX;
+            // sha + message sit right after this row's own lanes, so the message stays close to
+            // the commit it belongs to even when some other part of the graph is much wider.
+            // Ref badges (which can pile up into the dozens in sloppy repos with unswept
+            // branches) trail after the message instead of pushing it rightward.
+            let tx = this.textStartX(this.rowLaneWidth(i));
+            ctx.fillStyle = this.theme.sha;
+            ctx.fillText(row.shortSha, tx, y);
+            tx += ctx.measureText(row.shortSha).width + 10;
+            ctx.fillStyle = this.theme.fg;
+            ctx.fillText(row.summary, tx, y);
+            tx += ctx.measureText(row.summary).width + 10;
             for (const r of row.refs) {
                 const w = ctx.measureText(r.name).width + 10;
                 ctx.fillStyle = this.theme.refBg;
@@ -354,12 +375,7 @@ export class GraphRenderer {
                 ctx.fillText(r.name, tx + 5, y);
                 tx += w + 5;
             }
-            ctx.fillStyle = this.theme.sha;
-            ctx.fillText(row.shortSha, tx, y);
-            tx += ctx.measureText(row.shortSha).width + 10;
-            ctx.fillStyle = this.theme.fg;
-            ctx.fillText(row.summary, tx, y);
-            maxRight = Math.max(maxRight, tx + ctx.measureText(row.summary).width);
+            maxRight = Math.max(maxRight, tx);
         }
         ctx.globalAlpha = 1;
 
